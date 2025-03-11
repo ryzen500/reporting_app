@@ -2,6 +2,10 @@
 <html lang="en">
 <?php
 
+session_start();
+if (!isset( $_SESSION['nama_pemakai'])) {
+  header("Location: login.php");
+}
 
 function get_base_url()
 {
