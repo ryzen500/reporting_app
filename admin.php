@@ -174,6 +174,7 @@ $base_url = get_base_url();
             type: 'GET',
             data: function (d) {
                 return {
+                    draw:d.draw,
                     limit: d.length, // Menggunakan length sebagai limit
                     offset: d.start, // Menggunakan start sebagai offset
                     searchValue: d.search.value || "" // Kirim parameter pencarian jika ada
