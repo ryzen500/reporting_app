@@ -1,0 +1,36 @@
+{
+  "name": "almasaeed2010/adminlte",
+  "description": "AdminLTE - admin control panel and dashboard that's based on Bootstrap 4",
+  "homepage": "https://adminlte.io/",
+  "require": {
+    "mpdf/mpdf": "^8.0",
+    "endroid/qr-code": "^4.0",
+    "phpoffice/phpspreadsheet": "^3.3",
+    "dompdf/dompdf": "^3.0"
+
+  },
+     "config": {
+
+        "platform-check": false
+    },
+  "keywords": [
+    "css",
+    "js",
+    "less",
+    "responsive",
+    "back-end",
+    "template",
+    "theme",
+    "web",
+    "admin"
+  ],
+  "authors": [
+    {
+      "name": "Colorlib"
+    }
+  ],
+  "license": "MIT",
+  "support": {
+    "issues": "https://github.com/ColorlibHQ/AdminLTE/issues"
+  }
+}
