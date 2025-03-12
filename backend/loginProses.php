@@ -42,6 +42,7 @@ function cekPassword3($value, $katakunciPemakai, $seckey, $namaPemakai) {
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = isset($_POST['username']) ? trim($_POST['username']) : '';
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+    $ruangan_id = isset($_POST['ruangan_id']) ? trim($_POST['ruangan_id']) : '';
 
     if (empty($username) || empty($password)) {
         $error = "Username dan Password harus diisi";
@@ -49,17 +50,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 
-    $query = "SELECT * FROM loginpemakai_k WHERE nama_pemakai = $1";
+    $query = "SELECT  pegawai_m.nama_pegawai,loginpemakai_k.* FROM loginpemakai_k left join pegawai_m on pegawai_m.pegawai_id = loginpemakai_k.pegawai_id  WHERE nama_pemakai = $1";
     $result = pg_query_params($conn, $query, [$username]);
+
+    $queryRuangan = "SELECT  ruangan_id,instalasi_id from ruangan_m WHERE ruangan_id= $1";
+    $result2 = pg_query_params($conn, $queryRuangan, [$ruangan]);
 
     if ($result) {
         $login = pg_fetch_assoc($result);
+        $ruanganPemakai = pg_fetch_assoc($result2);
+
         if ($login) {
             $seckey = '5be7138d5324812699b0f54ed4a9243f252175f4';
             $katakunciPemakai = $login["katakunci_pemakai"];
 
             if (cekPassword3($password, $katakunciPemakai, $seckey, $username)) {
                 $_SESSION['nama_pemakai'] = $login['nama_pemakai'];
+                $_SESSION['nama_pegawai'] = $login['nama_pegawai'];
+                $_SESSION['instalasi_id'] = $ruanganPemakai['instalasi_id'];
+                $_SESSION['ruangan_id'] = $ruanganPemakai['ruangan_id'];
 
 
                 header("Location: ../admin.php");

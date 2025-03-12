@@ -24,11 +24,20 @@
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <a href="./" class="nav-link active">
+              <a href="admin.php" class="nav-link">
                 <i class="far fa-circle nav-icon"></i>
-                <p>Laporan </p>
+                <p>Laporan KRS </p>
               </a>
             </li>
+
+            <li class="nav-item">
+              <a href="adminMrs.php" class="nav-link">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Laporan MRS Dari IGD </p>
+              </a>
+            </li>
+
+
           </ul>
         </li>
         <li class="nav-item">

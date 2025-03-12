@@ -65,13 +65,14 @@ RS William Booth Surabaya
 
       <form action="./backend/loginProses.php" method="post">
         <div class="input-group mb-3">
-          <input type="text" name="username" class="form-control" placeholder="Username" required>
+          <input type="text" name="username" class="form-control" id="username" placeholder="Username" required onchange="loadDropdownData()">
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-envelope"></span>
             </div>
           </div>
         </div>
+
         <div class="input-group mb-3">
           <input type="password" name="password" class="form-control" placeholder="Password" required>
           <div class="input-group-append">
@@ -80,6 +81,14 @@ RS William Booth Surabaya
             </div>
           </div>
         </div>
+        
+        <!-- Dropdown Input -->
+        <div class="input-group mb-3">
+          <select id="dynamic-dropdown" name="ruangan_id" class="form-control">
+            <option value="">Pilih Ruangan</option>
+          </select>
+        </div>
+        
         <div class="row">
           <div class="col-8">
             <div class="icheck-primary">
@@ -98,7 +107,6 @@ RS William Booth Surabaya
       </form>
 
       <!-- /.social-auth-links -->
-
     </div>
     <!-- /.card-body -->
   </div>
@@ -106,11 +114,48 @@ RS William Booth Surabaya
 </div>
 <!-- /.login-box -->
 
-<!-- jQuery -->
 <script src="plugins/jquery/jquery.min.js"></script>
-<!-- Bootstrap 4 -->
 <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<!-- AdminLTE App -->
 <script src="dist/js/adminlte.min.js"></script>
+
+<script>
+function loadDropdownData() {
+    // Get the username value from the input field
+    var username = $('#username').val();
+    
+    console.log("Username ", username);
+    // Only proceed if the username is not empty
+    if (username.trim() !== "") {
+        $.ajax({
+            url: 'backend/DropdownLoginSIMRS.php', // Backend PHP script URL
+            type: 'GET',
+            data: { username: username },  // Send the username as part of the request
+            dataType: 'json',
+            success: function(data) {
+                if (data.status === 'success') {
+                    // Empty the dropdown before appending new data
+                    $('#dynamic-dropdown').empty();
+                    $('#dynamic-dropdown').append('<option value="">Pilih RUangan</option>'); // Default option
+                    
+                    // Loop through the returned data and populate the dropdown
+                    data.options.forEach(function(option) {
+                        $('#dynamic-dropdown').append('<option value="' + option.ruangan_id + '">' + option.ruangan_nama + '</option>');
+                    });
+                } else {
+                    console.log('Error: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('AJAX Error: ' + error);
+            }
+        });
+    } else {
+        // If username is empty, clear the dropdown
+        $('#dynamic-dropdown').empty();
+        $('#dynamic-dropdown').append('<option value="">Pilih Ruangan</option>');
+    }
+}
+</script>
+
 </body>
 </html>
