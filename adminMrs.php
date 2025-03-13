@@ -26,6 +26,8 @@ $base_url = get_base_url();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Laporan MRS dari IGD </title>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -36,10 +38,26 @@ $base_url = get_base_url();
   <link rel="stylesheet" href="./plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
   <link rel="stylesheet" href="./plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
   <!-- overlayScrollbars -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <link rel="stylesheet" href="./plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+
+
+  <!-- jQuery (harus dimuat dulu) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+
+
   <!-- Theme style -->
   <link rel="stylesheet" href="./dist/css/adminlte.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.2/dist/sweetalert2.min.css">
+
   <style>
     .container {
       padding-top: 50px;
@@ -81,6 +99,57 @@ $base_url = get_base_url();
         <div class="container-fluid">
           <div class="row">
             <div class="col-12">
+            <div class="card p-3" style="background-color:rgb(255, 255, 255);">
+            <h3 class="mb-3">Filter Laporan</h3>
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <label class="form-label">Periode</label>
+                    <select class="form-control" id="periode">
+                        <option>--Pilih--</option>
+                        <option value="Pendaftaran">Tanggal Pendaftaran</option>
+                        <option value="Admisi">Tanggal Admisi</option>
+                        <option value="Terima">Jam Timbang Terima</option>
+                        <option value="Advis">Tgl Advis MRS</option>
+                      </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tgl </label>
+                    <input type="text" id="dateRangePicker" class="form-control" placeholder="Select Date Range">
+
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nama Pasien</label>
+                    <input type="text" id="nama_pasien" class="form-control" placeholder="Nama">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="sudahMRS">
+                        <label class="form-check-label" for="sudahMRS">Sudah MRS</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+
+                <div class="col-md-6">
+                    <label class="form-label">No RM</label>
+                    <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Ruangan</label>
+                    <select id="ruanganSelect" class="form-control">
+                        <option>--Pilih--</option>
+                    </select>
+                </div>
+
+
+            </div>
+        
+            <div class="col-md-12 mt-3">
+            <button id="searchBtn1" onclick="cari();" class="btn btn-primary">Cari </button>
+            <button id="searchBtn2" class="btn btn-secondary">Batal</button>
+            </div>
+        </div>
               <!-- Table -->
               <div class="card">
                 <div class="card-header">
@@ -159,6 +228,194 @@ $base_url = get_base_url();
     //     dataType: 'json',
     //   });
     // }
+
+
+    function cari(){
+      
+      const periode = $("#periode").val();
+      const nama_pasien = $("#nama_pasien").val();
+      const dateRangePicker = $("#dateRangePicker").val();
+      const no_rekam_medik = $("#no_rekam_medik").val();
+      const ruanganSelect = $("#ruanganSelect").val();
+
+      console.log("No Rekam MEdik ", no_rekam_medik);
+      if ($.fn.DataTable.isDataTable("#example1")) {
+            $("#example1").DataTable().destroy();
+        }
+      const dataTable = $('#example1').DataTable({
+        serverSide: true,
+        processing: true,
+        responsive: true,
+        lengthChange: false,
+        paging: true, // Aktifkan paging
+        autoWidth: false,
+        ajax: {
+            url: `backend/LoadDataMRSBPJS.php`,
+            type: 'GET',
+            data: function (d) {
+                return {
+                    draw:d.draw,
+                    limit: d.length, // Menggunakan length sebagai limit
+                    offset: d.start, // Menggunakan start sebagai offset
+                    searchValue: d.search.value || "",  // Kirim parameter pencarian jika ada,
+                    periode : periode || "",
+                    nama_pasien : nama_pasien || "",
+                    no_rekam_medik: no_rekam_medik  || "",
+                    ruanganSelect : ruanganSelect || "",
+                    dateRangePicker : dateRangePicker || ""
+                  };
+            },
+            error: function (xhr, error, thrown) {
+                console.error("Error loading data:", error, thrown);
+            }
+        },
+        columns: [
+            {
+                data: null,
+                render: function (data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
+            { data: 'ruangan_nama' },
+            {
+                data: 'no_rekam_medik',
+                render: function (data) {
+                    return data ? data : '-';
+                }
+            },
+            { data: 'nama_pasien' },
+            {
+                    data: null,
+                    render: function (data) {
+                        return data.tgl_advismrs !== null 
+                            ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}`
+                            : `<button class="btn btn-success" onclick="handleClickAdvis(${data.pendaftaran_id},${data.tgl_advismrs})">Masukkan Jam Advis MRS</button>`;
+                    }
+                },
+
+            {
+                data: null,
+                render: function (data) {
+                  return data.tgl_suratperintahranap !== null ? data.tgl_suratperintahranap : `-`;
+                }
+            },
+
+
+            {
+                data: null,
+                render: function (data) {
+                  return data.tgladmisi !== null ? data.tgladmisi : `-`;
+                }
+            },
+
+
+            {
+                data: null,
+                render: function (data) {
+                  return data.tgl_timbangterima !== null 
+    ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` 
+    : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id}, ${data.tgl_timbangterima})"> Masukkan Jam Timbang Terima </button>`;
+                
+  }
+            },
+        
+                      {
+                    data: null,
+                    render: function (data) {
+                        if (data.tgl_timbangterima && data.tgl_advismrs) {
+                            const startTime = new Date(data.tgl_timbangterima);
+                            const endTime = new Date(data.tgl_advismrs);
+                            const diffMs = endTime - startTime;
+                            const diffHrs = Math.floor(diffMs / 3600000);
+                            const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                            const diffSecs = Math.floor((diffMs % 60000) / 1000);
+                            // return `-`;
+                            return ` Selisih: ${diffHrs} jam, ${diffMins} menit, ${diffSecs} detik`;
+                        }
+                        return `-`;
+                    }
+                },
+        
+
+        
+        
+
+            {
+                data: null,
+                render: function (data) {
+                  return data.tgl_timbangterima !== null ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : ` - `;
+                }
+            },
+        
+
+          ],
+        pageLength: 10,
+        buttons: [
+            { extend: 'colvis', columns: ':not(.noVis)' },
+            { extend: 'excel', exportOptions: { columns: ':visible' } },
+            { extend: 'csv', exportOptions: { columns: ':visible' } },
+            { extend: 'pdf', exportOptions: { columns: ':visible' } },
+            { extend: 'copy', exportOptions: { columns: ':visible' } },
+            { extend: 'print', exportOptions: { columns: ':visible' } }
+        ],
+        initComplete: function () {
+            dataTable.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+        }
+    });
+
+    }
+    function loadDataRuangan(){
+
+    // Tambahkan Select2 CDN
+    const select2CDN = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js";
+    const select2CSS = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css";
+    
+    // Tambahkan CSS Select2 jika belum ada
+    if (!$('link[href="' + select2CSS + '"]').length) {
+        $('head').append(`<link href="${select2CSS}" rel="stylesheet">`);
+    }
+    
+    // Tambahkan JS Select2 jika belum ada
+    if (!$('script[src="' + select2CDN + '"]').length) {
+        $.getScript(select2CDN, function () {
+            $("#ruanganSelect").select2({
+                placeholder: "--Pilih--",
+                allowClear: true,
+                multiple: true // Mengaktifkan multi-select
+            });
+        });
+    } else {
+        $("#ruanganSelect").select2({
+            placeholder: "--Pilih--",
+            allowClear: true,
+            multiple: true // Mengaktifkan multi-select
+        });
+    }
+    
+    const URL_API = "backend/LoadRuangan.php";
+    
+    // Mengambil data dari API menggunakan Axios
+    axios.get(URL_API)
+        .then(response => {
+            const data = response.data.options; // Sesuaikan dengan struktur data dari API
+            
+            // console.log("data ", response);
+            // Hapus opsi default jika perlu
+            $("#ruanganSelect").html('<option value="">--Pilih--</option>');
+            
+            // Looping data dan menambahkan option ke dalam select
+            $.each(data, function(index, item) {
+              // console.log("Item ", item);
+                $("#ruanganSelect").append(
+                    `<option value="${item.ruangan_id}">${item.ruangan_nama}</option>`
+                );
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching data: ", error);
+        });
+
+    }
  
     function loadData() {
     const dataTable = $('#example1').DataTable({
@@ -224,26 +481,18 @@ $base_url = get_base_url();
             {
                 data: null,
                 render: function (data) {
-                  console.log("data" , data);
+                  // return `Demos`;
                   return data.tgl_timbangterima !== null 
     ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` 
     : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id}, ${data.tgl_timbangterima})"> Masukkan Jam Timbang Terima </button>`;
                 }
             },
         
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_timbangterima !== null ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : `-`;
-                }
-            },
-        
-        
 
             {
                 data: null,
                 render: function (data) {
-                  return data.tgl_timbangterima !== null ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : ` - `;
+                  return data.tgl_timbangterima !== null ? `Demo` : ` - `;
                 }
             },
         
@@ -311,6 +560,53 @@ $base_url = get_base_url();
     });
     }
 
+
+    function handleClickAdvis(pendaftaran_id, tgl_advismrs) {
+      Swal.fire({
+      title: "Apakah anda yakin ?",
+      text: "Anda yakin untuk menginput data ?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Ya , Saya Yakin"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        let today = new Date();
+
+      // Mendapatkan bagian tahun, bulan, hari, jam, menit, dan detik
+      let year = today.getFullYear();
+      let month = String(today.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0, jadi perlu menambah 1
+      let day = String(today.getDate()).padStart(2, '0');
+      let hours = String(today.getHours()).padStart(2, '0');
+      let minutes = String(today.getMinutes()).padStart(2, '0');
+      let seconds = String(today.getSeconds()).padStart(2, '0');
+
+      // Formatkan tanggal dan waktu menjadi yyyy-mm-dd H:i:s
+      let formattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+      let pegawai_advismrs = '<?php echo  $_SESSION['nama_pegawai']; ?>';
+      tgl_advismrs = formattedDateTime;
+
+        $.ajax({
+            url: 'backend/UpdateDataMRSAdvis.php',
+            type: 'POST',
+            data: { pendaftaran_id: pendaftaran_id, tgl_advismrs : tgl_advismrs , pegawai_advismrs : pegawai_advismrs },
+            success: function (response) {
+              Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
+              $('#example1').DataTable().clear().destroy();
+              loadData();
+            },
+            error: function (error) {
+              console.error('Error deleting data:', error);
+              Swal.fire('Error!', 'Terjadi kesalahan saat menghapus data.', 'error');
+            }
+          });
+      }
+    });
+    }
+
+
     function renderButtons(id, sessionData) {
       let buttons = '';
       if (sessionData.update === "1") {
@@ -327,6 +623,16 @@ $base_url = get_base_url();
       console.log('Edit data with ID:', id);
       location.href = base_url + `edit.php?id=${id}`;
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+    flatpickr("#dateRangePicker", {
+        mode: "range",
+        dateFormat: "Y-m-d", // Format tanggal
+        onClose: function(selectedDates, dateStr, instance) {
+            console.log("Selected range:", dateStr);
+        }
+    });
+});
 
     function printData(id) {
       console.log('Edit data with ID:', id);
@@ -367,6 +673,7 @@ $base_url = get_base_url();
     $(document).ready(function () {
       // Load data into DataTable
       loadData();
+      loadDataRuangan();
     });
   </script>
 

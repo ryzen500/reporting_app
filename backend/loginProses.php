@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = isset($_POST['password']) ? trim($_POST['password']) : '';
     $ruangan_id = isset($_POST['ruangan_id']) ? trim($_POST['ruangan_id']) : '';
 
-    if (empty($username) || empty($password)) {
+    if (empty($username) || empty($password) || empty($ruangan_id)) {
         $error = "Username dan Password harus diisi";
         header("Location: ../login.php?error=" . urlencode($error));
         exit();
@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = pg_query_params($conn, $query, [$username]);
 
     $queryRuangan = "SELECT  ruangan_id,instalasi_id from ruangan_m WHERE ruangan_id= $1";
-    $result2 = pg_query_params($conn, $queryRuangan, [$ruangan]);
+    $result2 = pg_query_params($conn, $queryRuangan, [$ruangan_id]);
 
     if ($result) {
         $login = pg_fetch_assoc($result);
