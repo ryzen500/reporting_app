@@ -46,7 +46,47 @@ class LoadDataKRSBPJS {
 
         $data = [];
         while ($row = pg_fetch_assoc($result)) {
-            $data[] = $row;
+            // Ambil data utama
+            $rowData = $row;
+            $totalWaktu = '-';
+            $color ='black';
+            $keterangan='Jam Advis KRS atau Jam Pasien Pulang Kosong';
+            if(!empty($row['tglpulang']) && !empty($row['tgl_adviskrs']) ){
+                $tglpulang = new DateTime($row['tglpulang']); // Konversi ke DateTime
+                $tgl_adviskrs = new DateTime($row['tgl_adviskrs']); // Konversi ke DateTime
+                $diff = $tglpulang->diff($tgl_adviskrs);
+                $menit = ($diff->h * 60)+$diff->i;
+                $totalWaktu = "{$diff->days} hari, {$diff->h} jam, {$diff->i} menit";
+                if($diff->days>0){
+                    $color='red';
+                    $keterangan='Lebih dari 90 menit';
+
+                }else if($menit>90){
+                    $color='red';
+                    $keterangan='Lebih dari 90 menit';
+
+                }else{
+                    $color='green';
+                    $keterangan='Kurang dari 90 menit';
+
+                }
+            }
+            // Ambil data tambahan berdasarkan `pendaftaran_id`
+            $baseQuery1 = "SELECT * FROM keteranganrespontime_t WHERE pendaftaran_id = $1";
+            $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id']]);
+    
+            $detailData = [];
+            while ($detailRow = pg_fetch_assoc($resultDetails)) {
+                $detailData[] = $detailRow;
+            }
+    
+            // Tambahkan data tambahan ke dalam `rowData`
+            $rowData['loopKeterangan'] = $detailData;
+            $rowData['color'] = $color;
+            $rowData['totalWaktu'] = $totalWaktu;
+            $rowData['keteranganTotal'] = $keterangan;
+
+            $data[] = $rowData;
         }
 
         return [
