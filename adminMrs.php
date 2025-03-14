@@ -179,6 +179,31 @@ $base_url = get_base_url();
                     </tbody>
                   </table>
                 </div>
+
+                       <!-- Modal -->
+                       <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Keterangan</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" id="modalBody">
+                                <!-- Data dari AJAX akan ditampilkan di sini -->
+
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-danger" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">Tutup</span>
+                                </button>
+                                <button type="button" class="btn btn-primary" id="simpanKeterangan" onclick="simpanKeterangan()">Simpan</button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- /.card-body -->
               </div>
               <!-- /.card -->
@@ -229,126 +254,42 @@ $base_url = get_base_url();
     //   });
     // }
 
+    function initDataTable(filters = {}) {
+    if ($.fn.DataTable.isDataTable("#example1")) {
+        $("#example1").DataTable().destroy();
+    }
 
-    function cari(){
-      
-      const periode = $("#periode").val();
-      const nama_pasien = $("#nama_pasien").val();
-      const dateRangePicker = $("#dateRangePicker").val();
-      const no_rekam_medik = $("#no_rekam_medik").val();
-      const ruanganSelect = $("#ruanganSelect").val();
-
-      console.log("No Rekam MEdik ", no_rekam_medik);
-      if ($.fn.DataTable.isDataTable("#example1")) {
-            $("#example1").DataTable().destroy();
-        }
-      const dataTable = $('#example1').DataTable({
+    $("#example1").DataTable({
         serverSide: true,
         processing: true,
         responsive: true,
         lengthChange: false,
-        paging: true, // Aktifkan paging
+        paging: true,
         autoWidth: false,
         ajax: {
-            url: `backend/LoadDataMRSBPJS.php`,
-            type: 'GET',
-            data: function (d) {
-                return {
-                    draw:d.draw,
-                    limit: d.length, // Menggunakan length sebagai limit
-                    offset: d.start, // Menggunakan start sebagai offset
-                    searchValue: d.search.value || "",  // Kirim parameter pencarian jika ada,
-                    periode : periode || "",
-                    nama_pasien : nama_pasien || "",
-                    no_rekam_medik: no_rekam_medik  || "",
-                    ruanganSelect : ruanganSelect || "",
-                    dateRangePicker : dateRangePicker || ""
-                  };
-            },
-            error: function (xhr, error, thrown) {
-                console.error("Error loading data:", error, thrown);
-            }
+            url: "backend/LoadDataMRSBPJS.php",
+            type: "GET",
+            data: d => ({
+                draw: d.draw,
+                limit: d.length,
+                offset: d.start,
+                searchValue: d.search.value || "",
+                ...filters
+            }),
+            error: (xhr, error, thrown) => console.error("Error loading data:", error, thrown)
         },
         columns: [
-            {
-                data: null,
-                render: function (data, type, row, meta) {
-                    return meta.row + meta.settings._iDisplayStart + 1;
-                }
-            },
+            { data: null, render: (data, type, row, meta) => meta.row + meta.settings._iDisplayStart + 1 },
             { data: 'ruangan_nama' },
-            {
-                data: 'no_rekam_medik',
-                render: function (data) {
-                    return data ? data : '-';
-                }
-            },
+            { data: 'no_rekam_medik', render: data => data || '-' },
             { data: 'nama_pasien' },
-            {
-                    data: null,
-                    render: function (data) {
-                        return data.tgl_advismrs !== null 
-                            ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}`
-                            : `<button class="btn btn-success" onclick="handleClickAdvis(${data.pendaftaran_id},${data.tgl_advismrs})">Masukkan Jam Advis MRS</button>`;
-                    }
-                },
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_suratperintahranap !== null ? data.tgl_suratperintahranap : `-`;
-                }
-            },
-
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgladmisi !== null ? data.tgladmisi : `-`;
-                }
-            },
-
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_timbangterima !== null 
-    ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` 
-    : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id}, ${data.tgl_timbangterima})"> Masukkan Jam Timbang Terima </button>`;
-                
-  }
-            },
-        
-                      {
-                    data: null,
-                    render: function (data) {
-                        if (data.tgl_timbangterima && data.tgl_advismrs) {
-                            const startTime = new Date(data.tgl_timbangterima);
-                            const endTime = new Date(data.tgl_advismrs);
-                            const diffMs = endTime - startTime;
-                            const diffHrs = Math.floor(diffMs / 3600000);
-                            const diffMins = Math.floor((diffMs % 3600000) / 60000);
-                            const diffSecs = Math.floor((diffMs % 60000) / 1000);
-                            // return `-`;
-                            return ` Selisih: ${diffHrs} jam, ${diffMins} menit, ${diffSecs} detik`;
-                        }
-                        return `-`;
-                    }
-                },
-        
-
-        
-        
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_timbangterima !== null ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : ` - `;
-                }
-            },
-        
-
-          ],
+            { data: null, render: data => data.tgl_advismrs ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}` : `<button class="btn btn-success" onclick="handleClickAdvis(${data.pendaftaran_id})">Masukkan Jam Advis MRS</button>` },
+            { data: null, render: data => data.tgl_suratperintahranap || '-' },
+            { data: null, render: data => data.tgladmisi || '-' },
+            { data: null, render: data => data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id})">Masukkan Jam Timbang Terima</button>` },
+            { data: null, render: data => `${data.totalWaktu}<br><span style="color:${data.color}">${data.keteranganTotal}</span>` },
+            { data: null, render: (data, type, row) => row.loopKeterangan?.map(k => k.keterangan || 'No Data').join(', ') || `<a href="#" class="openDialogAdd" data-id="${row.pendaftaran_id}">Tambah Keterangan</a>` }
+        ],
         pageLength: 10,
         buttons: [
             { extend: 'colvis', columns: ':not(.noVis)' },
@@ -359,11 +300,53 @@ $base_url = get_base_url();
             { extend: 'print', exportOptions: { columns: ':visible' } }
         ],
         initComplete: function () {
-            dataTable.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            this.api().buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         }
     });
+}
+
+  function simpanKeterangan() {
+        let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
+        let pendaftaran_id = $("#pendaftaran_id").val(); // Ambil ID pasien
+
+        if (!keterangan.trim()) {
+            Swal.fire('Error', 'Data Keterangan tidak boleh kosong!', 'error');
+        }else{
+          $.ajax({
+              url: "backend/simpanKeteranganMRS.php",
+              type: "POST",
+              data: {
+                pendaftaran_id: pendaftaran_id,
+                  keterangan: keterangan
+              },
+              success: function (response) {
+                  let res = JSON.parse(response);
+                  if (res.status === "success") {
+                      alert("Keterangan berhasil disimpan!");
+                      $("#keteranganModal").modal("hide"); // Tutup modal
+                  } else {
+                      alert("Gagal menyimpan keterangan: " + res.message);
+                  }
+              },
+              error: function () {
+                  alert("Terjadi kesalahan saat menyimpan data.");
+              }
+          });
+
+        }
 
     }
+
+    function cari() {
+    const filters = {
+        periode: $("#periode").val() || "",
+        nama_pasien: $("#nama_pasien").val() || "",
+        no_rekam_medik: $("#no_rekam_medik").val() || "",
+        ruanganSelect: $("#ruanganSelect").val() || "",
+        dateRangePicker: $("#dateRangePicker").val() || ""
+    };
+    initDataTable(filters);
+}
     function loadDataRuangan(){
 
     // Tambahkan Select2 CDN
@@ -418,100 +401,9 @@ $base_url = get_base_url();
     }
  
     function loadData() {
-    const dataTable = $('#example1').DataTable({
-        serverSide: true,
-        processing: true,
-        responsive: true,
-        lengthChange: false,
-        paging: true, // Aktifkan paging
-        autoWidth: false,
-        ajax: {
-            url: `backend/LoadDataMRSBPJS.php`,
-            type: 'GET',
-            data: function (d) {
-                return {
-                    draw:d.draw,
-                    limit: d.length, // Menggunakan length sebagai limit
-                    offset: d.start, // Menggunakan start sebagai offset
-                    searchValue: d.search.value || "" // Kirim parameter pencarian jika ada
-                };
-            },
-            error: function (xhr, error, thrown) {
-                console.error("Error loading data:", error, thrown);
-            }
-        },
-        columns: [
-            {
-                data: null,
-                render: function (data, type, row, meta) {
-                    return meta.row + meta.settings._iDisplayStart + 1;
-                }
-            },
-            { data: 'ruangan_nama' },
-            {
-                data: 'no_rekam_medik',
-                render: function (data) {
-                    return data ? data : '-';
-                }
-            },
-            { data: 'nama_pasien' },
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_advismrs !== null ? data.tgl_advismrs : `<button class="btn btn-success"> Masukkan Jam Advis MRS </button>`;
-                }
-            },
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_suratperintahranap !== null ? data.tgl_suratperintahranap : `-`;
-                }
-            },
-
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgladmisi !== null ? data.tgladmisi : `-`;
-                }
-            },
-
-
-            {
-                data: null,
-                render: function (data) {
-                  // return `Demos`;
-                  return data.tgl_timbangterima !== null 
-    ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` 
-    : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id}, ${data.tgl_timbangterima})"> Masukkan Jam Timbang Terima </button>`;
-                }
-            },
-        
-
-            {
-                data: null,
-                render: function (data) {
-                  return data.tgl_timbangterima !== null ? `Demo` : ` - `;
-                }
-            },
-        
-
-          ],
-        pageLength: 10,
-        buttons: [
-            { extend: 'colvis', columns: ':not(.noVis)' },
-            { extend: 'excel', exportOptions: { columns: ':visible' } },
-            { extend: 'csv', exportOptions: { columns: ':visible' } },
-            { extend: 'pdf', exportOptions: { columns: ':visible' } },
-            { extend: 'copy', exportOptions: { columns: ':visible' } },
-            { extend: 'print', exportOptions: { columns: ':visible' } }
-        ],
-        initComplete: function () {
-            dataTable.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-        }
-    });
+    initDataTable();
 }
+
 
 
 
@@ -669,6 +561,26 @@ $base_url = get_base_url();
         }
       });
     }
+    $(document).on('click', '.openDialogAdd', function (e) {
+        e.preventDefault();
+
+        const pendaftaran_id = $(this).data('id'); // Ambil ID dari elemen yang diklik
+
+        // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
+        $.ajax({
+            url: 'backend/GetDetailKeteranganMRS.php',
+            type: 'POST',
+            data: { pendaftaran_id: pendaftaran_id },
+            success: function (response) {
+                $('#modalBody').html(response); // Masukkan data ke dalam modal
+                $('#myModal').modal('show');   // Tampilkan modal
+            },
+            error: function () {
+                alert('Gagal mengambil data.');
+            }
+        });
+    });
+
 
     $(document).ready(function () {
       // Load data into DataTable
