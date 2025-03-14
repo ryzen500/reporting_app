@@ -180,6 +180,7 @@ $base_url = get_base_url();
                   </table>
                 </div>
 
+                <!-- Dialog -->
                        <!-- Modal -->
                        <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
                     <div class="modal-dialog">
@@ -204,6 +205,36 @@ $base_url = get_base_url();
                         </div>
                     </div>
                 </div>
+                <!-- Dialog Close -->
+              
+              
+                <!-- Dialog Edit  -->
+  <!-- Modal -->
+        <div class="modal fade" id="myModalEdit" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Keterangan</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" id="modalBodyEdit">
+                                <!-- Data dari AJAX akan ditampilkan di sini -->
+
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-danger" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">Tutup</span>
+                                </button>
+                                <button type="button" class="btn btn-primary" id="updateKeterangan" onclick="updateKeterangan()">Update</button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLose DIalog Edit -->
                 <!-- /.card-body -->
               </div>
               <!-- /.card -->
@@ -283,13 +314,45 @@ $base_url = get_base_url();
             { data: 'ruangan_nama' },
             { data: 'no_rekam_medik', render: data => data || '-' },
             { data: 'nama_pasien' },
-            { data: null, render: data => data.tgl_advismrs ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}` : `<button class="btn btn-success" onclick="handleClickAdvis(${data.pendaftaran_id})">Masukkan Jam Advis MRS</button>` },
+            { data: null, render: data => data.tgl_advismrs ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}` : `<button class="btn btn-success btn-sm" onclick="handleClickAdvis(${data.pendaftaran_id})"><span>Masukkan Jam Advis MRS</span></button>` },
             { data: null, render: data => data.tgl_suratperintahranap || '-' },
             { data: null, render: data => data.tgladmisi || '-' },
-            { data: null, render: data => data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : `<button class="btn btn-success" onclick="handleClick(${data.pendaftaran_id})">Masukkan Jam Timbang Terima</button>` },
+            { data: null, render: data => data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : `<button class="btn btn-success btn-sm" onclick="handleClick(${data.pendaftaran_id})"><span>Masukkan Jam Timbang Terima</span></button>` },
             { data: null, render: data => `${data.totalWaktu}<br><span style="color:${data.color}">${data.keteranganTotal}</span>` },
-            { data: null, render: (data, type, row) => row.loopKeterangan?.map(k => k.keterangan || 'No Data').join(', ') || `<a href="#" class="openDialogAdd" data-id="${row.pendaftaran_id}">Tambah Keterangan</a>` }
-        ],
+            // { data: null, render: (data, type, row) => row.loopKeterangan?.map(k => k.keterangan || 'No Data').join(', ') || `<a href="#" class="openDialogAdd" data-id="${row.pendaftaran_id}">Tambah Keterangan</a>` }
+            {
+    data: null,
+    render: ({ loopKeterangan, pendaftaran_id }) => {
+        let listKeterangan = `<ul>${
+            (Array.isArray(loopKeterangan) && loopKeterangan.length > 0)
+                ? loopKeterangan.map(({ keteranganrespontime_id, keterangan }) => 
+                  `
+                    <li>
+                        ${keterangan || 'No Data'}
+                        <a href="#" class="editKeterangan" data-id="${keteranganrespontime_id}">
+                            <i class="fa fa-pencil-alt text-primary"></i>
+                        </a>
+                        <a href="#" class="deleteKeterangan" data-id="${keteranganrespontime_id}">
+                            <i class="fa fa-trash text-danger"></i>
+                        </a>
+                    </li>
+                ` 
+                ).join('')
+                : '<li>Tidak ada keterangan</li>'
+        }</ul>`;
+
+        return `
+            <div>
+                ${listKeterangan}
+                <a href="#" class="openDialogAdd" style="text-align:center" data-id="${pendaftaran_id}">
+                    <i class="fa fa-plus-circle text-success"></i> Tambah Keterangan
+                </a>
+            </div>
+        `;
+    }
+}
+ 
+          ],
         pageLength: 10,
         buttons: [
             { extend: 'colvis', columns: ':not(.noVis)' },
@@ -305,7 +368,40 @@ $base_url = get_base_url();
     });
 }
 
-  function simpanKeterangan() {
+  function updateKeterangan() {
+        let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
+        let keteranganrespontime_id = $("#keteranganrespontime_id").val(); // Ambil ID pasien
+
+        if (!keterangan.trim()) {
+            Swal.fire('Error', 'Data Keterangan tidak boleh kosong!', 'error');
+        }else{
+          $.ajax({
+              url: "backend/updateKeteranganMRS.php",
+              type: "POST",
+              data: {
+                keteranganrespontime_id: keteranganrespontime_id,
+                  keterangan: keterangan
+              },
+              success: function (response) {
+          
+                    Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
+                    $("#myModalEdit").modal("hide"); // Tutup modal
+
+                    $('#example1').DataTable().clear().destroy();
+                    loadData();
+                
+              },
+              error: function () {
+                  alert("Terjadi kesalahan saat menyimpan data.");
+              }
+          });
+
+        }
+
+    }
+
+
+    function simpanKeterangan() {
         let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
         let pendaftaran_id = $("#pendaftaran_id").val(); // Ambil ID pasien
 
@@ -336,6 +432,7 @@ $base_url = get_base_url();
         }
 
     }
+
 
     function cari() {
     const filters = {
@@ -581,7 +678,68 @@ $base_url = get_base_url();
         });
     });
 
+    $(document).on('click', '.editKeterangan', function (e) {
+        e.preventDefault();
 
+        const keteranganrespontime_id = $(this).data('id'); // Ambil ID dari elemen yang diklik
+
+        // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
+        $.ajax({
+            url: 'backend/UpdateDetailKeteranganMRS.php',
+            type: 'POST',
+            data: { keteranganrespontime_id: keteranganrespontime_id },
+            success: function (response) {
+                $('#modalBodyEdit').html(response); // Masukkan data ke dalam modal
+                $('#myModalEdit').modal('show');   // Tampilkan modal
+            },
+            error: function () {
+                alert('Gagal mengambil data.');
+            }
+        });
+    });
+
+
+
+    
+    $(document).on('click', '.deleteKeterangan', function (e) {
+        e.preventDefault();
+
+        const keteranganrespontime_id = $(this).data('id'); // Ambil ID dari elemen yang diklik
+
+        console.log("Keterangan " , keteranganrespontime_id);
+        Swal.fire({
+        title: 'Anda yakin?',
+        text: "Ingin Menghapus Data ",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+     
+             // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
+        $.ajax({
+            url: 'backend/deleteKeteranganMRS.php',
+            type: 'POST',
+            data: { keteranganrespontime_id: keteranganrespontime_id },
+            success: function (response) {
+                $('#myModalEdit').modal('hide');   // Tampilkan modal
+                loadData();
+              },
+            error: function () {
+                alert('Gagal mengambil data.');
+            }
+        });
+
+
+        }
+      });
+     
+    });
+
+    
     $(document).ready(function () {
       // Load data into DataTable
       loadData();
