@@ -72,9 +72,14 @@ class LoadDataKRSBPJS {
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT * FROM keteranganrespontime_t WHERE pendaftaran_id = $1";
-            $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id']]);
-    
+            $baseQuery1 = "SELECT r.ruangan_nama, t.* 
+            FROM keteranganrespontime_t t  
+            JOIN ruangan_m r ON t.ruangan_id = r.ruangan_id 
+            WHERE t.pendaftaran_id = $1 
+            AND (is_deleted = $2 OR is_deleted IS NULL)
+            AND jenis = $3
+            ORDER by t.keteranganrespontime_id desc";
+            $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id'], 'false', 'Respon Time KRS']);
             $detailData = [];
             while ($detailRow = pg_fetch_assoc($resultDetails)) {
                 $detailData[] = $detailRow;

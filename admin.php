@@ -31,6 +31,10 @@ $base_url = get_base_url();
     href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="./plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- overlayScrollbars -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <!-- DataTables -->
   <link rel="stylesheet" href="./plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
   <link rel="stylesheet" href="./plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
@@ -88,57 +92,55 @@ $base_url = get_base_url();
                   <div class="card-tools">
                   </div>
                 </div>
-                <div class="row">
-                  <div class="col-5">
-                    <div class="form-group daterange-container" style="margin-left:25px;">
-                      <label for="date_range">Periode:</label>
-                      <input type="text" id="date_range" name="date_range" class="form-control"
-                        placeholder="Masukkan Periode">
-
-
-                      <div class="form-check form-switch" style="margin-left:25px;">
-                        <input class="form-check-input" type="checkbox" role="switch" id="toggle_mode" checked />
-                        <label class="form-check-label" for="toggle_mode" id="toggle_label">
-                          Filter Periode Aktif
-                        </label>
+                <div class="card p-3" style="background-color:rgb(255, 255, 255);">
+                  <h3 class="mb-3">Filter Laporan</h3>
+                  <div class="row mb-2">
+                      <div class="col-md-3">
+                          <label class="form-label">Periode</label>
+                          <select class="form-control" id="periode">
+                              <option>--Pilih--</option>
+                              <option value="Pendaftaran">Tanggal Pendaftaran</option>
+                              <option value="Admisi">Tanggal Admisi</option>
+                              <option value="Terima">Jam Timbang Terima</option>
+                              <option value="Advis">Tgl Advis KRS</option>
+                            </select>
                       </div>
-                    </div>
+                      <div class="col-md-3">
+                          <label class="form-label">Tgl </label>
+                          <input type="text" id="dateRangePicker" class="form-control" placeholder="Select Date Range">
 
-
-
-                    <div class="form-group" style="margin-left:25px;">
-                      <label for="poli_tujuan">Poli Tujuan:</label>
-                      <input type="text" id="poli_tujuan" name="poli_tujuan" class="form-control"
-                        placeholder="Masukkan Nama Poli yang dituju">
-                    </div>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Nama Pasien</label>
+                          <input type="text" id="nama_pasien" class="form-control" placeholder="Nama">
+                      </div>
+                      <div class="col-md-6 d-flex align-items-end">
+                          <div class="form-check">
+                              <input class="form-check-input" type="checkbox" id="sudahMRS">
+                              <label class="form-check-label" for="sudahMRS">Sudah KRS</label>
+                          </div>
+                      </div>
                   </div>
+                  <div class="row">
 
+                      <div class="col-md-6">
+                          <label class="form-label">No RM</label>
+                          <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
+                      </div>
 
-                  <div class="col-5" style="margin-top: 30px;">
-                    <div class="form-group" style="margin-left:50px;">
-                      <label for="no_rekam_medik">No Rekam Medik:</label>
-                      <input type="text" id="no_rekam_medik" name="no_rekam_medik" class="form-control"
-                        placeholder="Masukkan No Rekam Medik">
-                    </div>
-                    <div class="form-group" style="margin-left:50px;">
-                      <label for="status">Status:</label>
-                      <select id="status" name="status" class="form-control">
-                        <option value="">--Silahkan pilih Status--</option>
+                      <div class="col-md-6">
+                          <label class="form-label">Ruangan</label>
+                          <select id="ruanganSelect" class="form-control">
+                              <option>--Pilih--</option>
+                          </select>
+                      </div>
 
-                        <option value="Terduga">Terduga</option>
-                        <option value="Bukan Terduga">Tidak Terduga</option>
-                      </select>
-                    </div>
 
                   </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-12 text-left" style="margin-left:25px;">
-                    <button type="button" class="btn btn-primary" id="searchButton">Search</button>
-                    <!-- <button id="btnPrint" onclick="printData()">Print</button> -->
-                    <!-- <button id="btnDownloadExcel" onclick="downloadExcel()">Download Excel</button> -->
-                    <!-- <button id="btnDownloadPDF" onclick="downloadPDF()">Download PDF</button> -->
+          
+                  <div class="col-md-12 mt-3">
+                    <button id="searchBtn1" onclick="cari();" class="btn btn-primary">Cari </button>
+                    <button id="searchBtn2" class="btn btn-secondary">Batal</button>
                   </div>
                 </div>
 
@@ -230,7 +232,16 @@ $base_url = get_base_url();
   </script>
   <script>
     var base_url = "<?php echo $base_url ?>";
-
+    function cari() {
+        const filters = {
+            periode: $("#periode").val() || "",
+            nama_pasien: $("#nama_pasien").val() || "",
+            no_rekam_medik: $("#no_rekam_medik").val() || "",
+            ruanganSelect: $("#ruanganSelect").val() || "",
+            dateRangePicker: $("#dateRangePicker").val() || ""
+        };
+        loadData(filters);
+    }
     function checkSession() {
       return $.ajax({
         url: 'backend/sessionData.php', // The PHP file we created to return session data
@@ -239,7 +250,7 @@ $base_url = get_base_url();
       });
     }
  
-    function loadData() {
+    function loadData(filters = {}) {
         const dataTable = $('#example1').DataTable({
             serverSide: true,
             processing: true,
@@ -255,7 +266,8 @@ $base_url = get_base_url();
                         draw:d.draw,
                         limit: d.length, // Menggunakan length sebagai limit
                         offset: d.start, // Menggunakan start sebagai offset
-                        searchValue: d.search.value || "" // Kirim parameter pencarian jika ada
+                        searchValue: d.search.value || "", // Kirim parameter pencarian jika ada
+                        ...filters
                     };
                 },
                 error: function (xhr, error, thrown) {
@@ -272,7 +284,6 @@ $base_url = get_base_url();
                 { data: 'ruangan_nama' },
                 {
                   data: null, render: function (data, type, row) {
-                    console.log(data,type,"no_rekam_medik", row);
                     const no_rekam_medik = row.no_rekam_medik;
                     const nama_pasien = (row.nama_pasien === '') ? '-' : row.nama_pasien;
                     return `${no_rekam_medik} / ${nama_pasien}`;
@@ -335,13 +346,23 @@ $base_url = get_base_url();
                       if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
                         let result = ''; // Variabel untuk menyimpan hasil looping
                         row.loopKeterangan.forEach(item => {
-                            result += (item.nama_keterangan || 'No Data') + ', ';
+                            // result += (item.keterangan || '-') + '<br> ';
+                            if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
+                              result += item.ruangan_nama +' : '+ item.keterangan;
+                              result += ` <a href="#" class="openDialogAdd" onclick="openDialogUpdate(${item.keteranganrespontime_id})" style="color:black"><i class="fa-solid fa-pencil"></i></a>`;
+                              result += ` <a href="#" class="openDialogAdd" onclick="openDialogDelete(${item.keteranganrespontime_id})" style="color:red"><i class="fa-regular fa-circle-xmark"></i></a>`;
+                              result +=  ' <br>';
+
+                            }else{
+                              result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
+                            }
                         });
+                        result += `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
                         return result; // Menghapus koma dan spasi terakhir    
                         // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
 
                       } else {
-                        return `<a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
+                        return `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
                       }
                     }
                 },
@@ -364,7 +385,11 @@ $base_url = get_base_url();
     function simpanKeterangan() {
         let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
         let pasienadmisi_id = $("#pasienadmisi_id").val(); // Ambil ID pasien
-
+        let pendaftaran_id = $("#pendaftaran_id").val(); // Ambil ID pasien
+        let keteranganrespontime_id = $("#keteranganrespontime_id").val(); // Ambil ID pasien
+        if (keteranganrespontime_id === null || keteranganrespontime_id === undefined || keteranganrespontime_id === "") {
+            keteranganrespontime_id =null;
+        }
         if (!keterangan.trim()) {
             Swal.fire('Error', 'Data Keterangan tidak boleh kosong!', 'error');
         }else{
@@ -373,19 +398,25 @@ $base_url = get_base_url();
               type: "POST",
               data: {
                   pasienadmisi_id: pasienadmisi_id,
+                  pendaftaran_id: pendaftaran_id,
+                  jenis: 'Respon Time KRS',
+                  keteranganrespontime_id:keteranganrespontime_id,
                   keterangan: keterangan
               },
               success: function (response) {
-                  let res = JSON.parse(response);
+                  // let res = JSON.parse(response);
+                  let res = response;
                   if (res.status === "success") {
-                      alert("Keterangan berhasil disimpan!");
-                      $("#keteranganModal").modal("hide"); // Tutup modal
+                      Swal.fire('Tersimpan!', 'Data berhasil disimpan.', 'success');
+                      $("#myModal").modal("hide"); // Tutup modal
+                      $('#example1').DataTable().clear().destroy();
+                      loadData();
                   } else {
-                      alert("Gagal menyimpan keterangan: " + res.message);
+                    Swal.fire('Error', 'Gagal Simpan Data', 'error');
                   }
               },
               error: function () {
-                  alert("Terjadi kesalahan saat menyimpan data.");
+                Swal.fire('Error', 'Gagal Simpan Data', 'error');
               }
           });
 
@@ -472,16 +503,41 @@ $base_url = get_base_url();
         }
       });
     }
-    $(document).on('click', '.openDialogAdd', function (e) {
-        e.preventDefault();
-
-        const pasienadmisiId = $(this).data('id'); // Ambil ID dari elemen yang diklik
-
-        // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
-        $.ajax({
-            url: 'backend/GetDetailKeterangan.php',
+    function openDialogDelete(keteranganrespontime_id) {
+      Swal.fire({
+        title: 'Anda yakin?',
+        text: "Hapus Keterangan",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url: 'backend/deleteKeterangan.php',
             type: 'POST',
-            data: { pasienadmisi_id: pasienadmisiId },
+            data: { keteranganrespontime_id },
+            success: function (response) {
+              Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+              $('#example1').DataTable().clear().destroy();
+              loadData();
+            },
+            error: function (error) {
+              console.error('Error Save data:', error);
+              Swal.fire('Error!', 'Terjadi kesalahan saat dihapus data.', 'error');
+            }
+          });
+        }
+      });
+    }
+    function openDialogUpdate(keteranganrespontime_id){
+          // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
+          $.ajax({
+            url: 'backend/GetEditDetailKeterangan.php',
+            type: 'POST',
+            data: { keteranganrespontime_id: keteranganrespontime_id },
             success: function (response) {
                 $('#modalBody').html(response); // Masukkan data ke dalam modal
                 $('#myModal').modal('show');   // Tampilkan modal
@@ -490,8 +546,22 @@ $base_url = get_base_url();
                 alert('Gagal mengambil data.');
             }
         });
-    });
-
+    }
+    function openDialogAdd(pasienadmisi_id,pendaftaran_id){
+          // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
+          $.ajax({
+            url: 'backend/GetDetailKeterangan.php',
+            type: 'POST',
+            data: { pasienadmisi_id: pasienadmisi_id, pendaftaran_id:pendaftaran_id},
+            success: function (response) {
+                $('#modalBody').html(response); // Masukkan data ke dalam modal
+                $('#myModal').modal('show');   // Tampilkan modal
+            },
+            error: function () {
+                alert('Gagal mengambil data.');
+            }
+        });
+    }
     $(document).ready(function () {
       // Load data into DataTable
       loadData();
@@ -500,30 +570,14 @@ $base_url = get_base_url();
     // Initialize the date range picker
     let isRangeMode = true; // Default mode adalah range
 
-    // Fungsi untuk menginisialisasi Flatpickr
-    function initFlatpickr() {
-      flatpickr("#date_range", {
-        mode: isRangeMode ? "range" : "single", // Mode bergantung pada toggle
-        dateFormat: "Y-m-d", // Format tanggal
-        onChange: function (selectedDates, dateStr) {
-          console.log(`Tanggal yang dipilih: ${dateStr}`);
-        },
-      });
-    }
-
-    // Inisialisasi Flatpickr
-    initFlatpickr();
-
-    // Event listener untuk menangani perubahan toggle
-    document.getElementById("toggle_mode").addEventListener("change", function () {
-      isRangeMode = this.checked; // Cek status toggle (checked/unchecked)
-      flatpickr("#date_range").destroy(); // Hancurkan instance Flatpickr saat ini
-      initFlatpickr(); // Re-inisialisasi dengan mode baru
-
-      // Ubah teks label sesuai dengan mode
-      document.getElementById("toggle_label").textContent = isRangeMode
-        ? "Filter Periode Aktif"
-        : "Filter Harian Aktif";
+    document.addEventListener("DOMContentLoaded", function () {
+        flatpickr("#dateRangePicker", {
+            mode: "range",
+            dateFormat: "Y-m-d", // Format tanggal
+            onClose: function(selectedDates, dateStr, instance) {
+                console.log("Selected range:", dateStr);
+            }
+        });
     });
 
   </script>

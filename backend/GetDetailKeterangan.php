@@ -15,6 +15,7 @@ if (!isset($_POST['pasienadmisi_id']) || empty($_POST['pasienadmisi_id'])) {
 <label for="keterangan"><strong>Keterangan:</strong></label>
 <textarea id="keterangan" name="keterangan" class="form-control" rows="3" ></textarea>
 <input type="text" id="pasienadmisi_id" name="pasienadmisi_id" hidden value="<?php echo $_POST['pasienadmisi_id'] ?>">
+<input type="text" id="pendaftaran_id" name="pendaftaran_id" hidden value="<?php echo $_POST['pendaftaran_id'] ?>">
 <hr>
 <?php
 // Tutup koneksi (opsional)
