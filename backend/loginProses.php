@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 
-    $query = "SELECT  pegawai_m.nama_pegawai,loginpemakai_k.* FROM loginpemakai_k left join pegawai_m on pegawai_m.pegawai_id = loginpemakai_k.pegawai_id  WHERE nama_pemakai = $1";
+    $query = "SELECT  pegawai_m.pegawai_id,pegawai_m.nama_pegawai,loginpemakai_k.* FROM loginpemakai_k left join pegawai_m on pegawai_m.pegawai_id = loginpemakai_k.pegawai_id  WHERE nama_pemakai = $1";
     $result = pg_query_params($conn, $query, [$username]);
 
     $queryRuangan = "SELECT  ruangan_id,instalasi_id from ruangan_m WHERE ruangan_id= $1";
@@ -66,6 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if (cekPassword3($password, $katakunciPemakai, $seckey, $username)) {
                 $_SESSION['nama_pemakai'] = $login['nama_pemakai'];
+                $_SESSION['pegawai_id'] = $login['pegawai_id'];
+                $_SESSION['loginpemakai_id'] = $login['loginpemakai_id'];
+
                 $_SESSION['nama_pegawai'] = $login['nama_pegawai'];
                 $_SESSION['instalasi_id'] = $ruanganPemakai['instalasi_id'];
                 $_SESSION['ruangan_id'] = $ruanganPemakai['ruangan_id'];
