@@ -154,7 +154,7 @@ class LoadDataMRSBPJS {
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT * FROM keteranganrespontime_t WHERE pendaftaran_id = $1";
+            $baseQuery1 = "SELECT * FROM keteranganrespontime_t WHERE pendaftaran_id = $1 AND is_deleted = FALSE";
             $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id']]);
     
             $detailData = [];
