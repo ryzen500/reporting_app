@@ -9,6 +9,7 @@ class LoadDataMRSBPJS {
         $this->conn = $conn;
     }
 
+    
     public function getData($draw, $limit, $offset, $searchValue, $no_rekam_medik = null, $nama_pasien = null, $periode = null, $ruanganSelect = null, $dateRangePicker = null, $session_instalasi_id, $session_ruangan_id) {
         $baseQuery = " FROM laporanmrsri_v WHERE 1=1 ";
         $params = [];
@@ -17,19 +18,21 @@ class LoadDataMRSBPJS {
         // Instalasi yang diizinkan
         $allowed_instalasi = [2, 8, 3, 73];
 
-        if (!in_array($session_instalasi_id, $allowed_instalasi)) {
+        // var_dump(!in_array($session_instalasi_id, $allowed_instalasi));die;
+        if (empty($ruanganSelect) && !in_array($session_instalasi_id, $allowed_instalasi)) {
             // Jika instalasi_id tidak sesuai, paksa filter ruangan_id = 7
             $baseQuery .= " AND ruangan_id = $" . $paramIndex;
             $params[] = 7;
             $paramIndex++;
         } else {
             // Jika instalasi_id sesuai, filter berdasarkan ruangan dari session
-            if (!empty($session_ruangan_id)) {
+            if (!empty($ruanganSelect) && sizeof($ruanganSelect) == 1) {
                 $baseQuery .= " AND ruangan_id = $" . $paramIndex;
-                $params[] = $session_ruangan_id;
+                $params[] = $ruanganSelect[0];
                 $paramIndex++;
             }
         }
+        // var_dump($params);die;
 
         // Tambahkan filter pencarian umum
         if (!empty($searchValue)) {
@@ -56,55 +59,63 @@ class LoadDataMRSBPJS {
             $paramIndex++;
         }
 
-        // Filter berdasarkan periode tertentu
-        if (!empty($periode)) {
-            switch ($periode) {
-                case "Pendaftaran":
-                    $column = "tglpendaftaran";
-                    break;
-                case "Admisi":
-                    $column = "tgladmisi";
-                    break;
-                case "Terima":
-                    $column = "tglterima";
-                    break;
-                case "Advis":
-                    $column = "tgladvis";
-                    break;
-                default:
-                    $column = null;
-                    break;
+                // Pilih kolom tanggal berdasarkan periode yang dipilih
+            $column = "tgl_pendaftaran"; // Default
+            if (!empty($periode)) {
+                switch ($periode) {
+                    case "Pendaftaran":
+                        $column = "tgl_pendaftaran";
+                        break;
+                    case "Admisi":
+                        $column = "tgladmisi";
+                        break;
+                    case "Terima":
+                        $column = "tgl_timbangterima";
+                        break;
+                    case "Advis":
+                        $column = "tgl_advismrs";
+                        break;
+                }
             }
 
-            if ($column) {
+            // Jika dateRangePicker diisi, gunakan sebagai filter utama
+            if (!empty($dateRangePicker)) {
+                $dates = explode(" to ", $dateRangePicker);
+                if (count($dates) === 2) {
+                    $startDate = trim($dates[0]);
+                    $endDate = trim($dates[1]);
+
+                    $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                    $params[] = $startDate;
+                    $params[] = $endDate;
+                    $paramIndex += 2;
+                }
+            } 
+            // Jika dateRangePicker kosong tetapi periode diisi, gunakan filter default awal dan akhir bulan
+            else if (!empty($periode)) {
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
                 $params[] = date("Y-m-01"); // Awal bulan
                 $params[] = date("Y-m-t");  // Akhir bulan
                 $paramIndex += 2;
             }
-        }
 
-        // Filter berdasarkan dateRangePicker (contoh format: "2025-03-13 to 2025-03-14")
-        if (!empty($dateRangePicker)) {
-            $dates = explode(" to ", $dateRangePicker);
-            if (count($dates) === 2) {
-                $startDate = trim($dates[0]);
-                $endDate = trim($dates[1]);
-
-                // Gunakan tglpendaftaran sebagai default filter (bisa disesuaikan)
-                $baseQuery .= " AND tglpendaftaran BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = $startDate;
-                $params[] = $endDate;
-                $paramIndex += 2;
-            }
-        }
-
+            // var_dump($ruanganSelect);die;
         // Filter berdasarkan ruangan dari input user (jika instalasi_id valid)
-        if (!empty($ruanganSelect) && in_array($session_instalasi_id, $allowed_instalasi)) {
-            $baseQuery .= " AND ruangan_nama ILIKE $" . $paramIndex;
-            $params[] = "%".$ruanganSelect."%";
+    // Filter berdasarkan ruangan dari input user (jika instalasi_id valid)
+    if (!empty($ruanganSelect)  && sizeof($ruanganSelect) > 1) {
+        $placeholders = [];
+        
+        foreach ($ruanganSelect as $ruangan) {
+            $placeholders[] = "$" . $paramIndex; // Buat placeholder untuk parameter
+            $params[] = $ruangan; // Tanpa wildcard karena pakai IN
             $paramIndex++;
         }
+    
+        
+        // Menggunakan IN dengan placeholder yang sesuai
+        $baseQuery .= " AND ruangan_id IN (" . implode(", ", $placeholders) . ")";
+    }
+    
 
         // Hitung total data sebelum filtering
         $countTotalQuery = "SELECT COUNT(*) FROM laporanmrsri_v";
@@ -112,19 +123,21 @@ class LoadDataMRSBPJS {
 
         // Hitung total data setelah filtering
         $countFilteredQuery = "SELECT COUNT(*)" . $baseQuery;
+        // var_dump($params);
         $totalFiltered = pg_fetch_result(pg_query_params($this->conn, $countFilteredQuery, $params), 0, 0);
 
         // Ambil data sesuai pagination
-        $query = "SELECT *" . $baseQuery . " LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);
-        $params[] = $limit;
+        $query = "SELECT *" . $baseQuery . " ORDER BY pendaftaran_id DESC LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);        $params[] = $limit;
         $params[] = $offset;
 
         $result = pg_query_params($this->conn, $query, $params);
 
         if (!$result) {
+            error_log("PostgreSQL Error: " . pg_last_error($this->conn));
             echo json_encode(["error" => pg_last_error($this->conn)]);
             exit;
         }
+        
 
         $data = [];
         while ($row = pg_fetch_assoc($result)) {
@@ -188,17 +201,7 @@ if (!isset($conn)) {
     ]));
 }
 
-// Ambil instalasi_id dan ruangan_id dari session
-$session_instalasi_id = !empty( $_SESSION['instalasi_id']) ?  $_SESSION['instalasi_id'] : null;
-$session_ruangan_id = !empty( $_SESSION['ruangan_id']) ?  $_SESSION['ruangan_id'] : null;
 
-// Validasi apakah session tersedia
-if ($session_instalasi_id === null || $session_ruangan_id === null) {
-    die(json_encode([
-        "status" => "error",
-        "message" => "Session instalasi_id atau ruangan_id tidak ditemukan."
-    ]));
-}
 
 // Ambil parameter dari frontend
 $draw = isset($_GET['draw']) ? intval($_GET['draw']) : 1;
@@ -210,6 +213,18 @@ $periode = isset($_GET['periode']) ? $_GET['periode'] : "";
 $dateRangePicker = isset($_GET['dateRangePicker']) ? $_GET['dateRangePicker'] : "";
 $nama_pasien = isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "";
 $ruanganSelect = isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : "";
+// Ambil instalasi_id dan ruangan_id dari session
+$session_instalasi_id = !empty( $_SESSION['instalasi_id']) ?  $_SESSION['instalasi_id'] : null;
+$session_ruangan_id = !empty( $ruanganSelect[0]) ?  $ruanganSelect  : $_SESSION['ruangan_id'];
+
+
+// Validasi apakah session tersedia
+if ($session_instalasi_id === null || $session_ruangan_id === null) {
+    die(json_encode([
+        "status" => "error",
+        "message" => "Session instalasi_id atau ruangan_id tidak ditemukan."
+    ]));
+}
 
 $loadData = new LoadDataMRSBPJS($conn);
 $data = $loadData->getData($draw, $limit, $offset, $searchValue, $no_rekam_medik, $nama_pasien, $periode, $ruanganSelect, $dateRangePicker, $session_instalasi_id, $session_ruangan_id);
