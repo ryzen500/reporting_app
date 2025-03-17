@@ -164,8 +164,7 @@ $base_url = get_base_url();
                       <tr>
                         <th>No.</th>
                         <th>Ruangan</th>
-                        <th>No. Rekam Medik </th>
-                        <th>Nama  Pasien</th>
+                        <th>No. Rekam Medik  / <br> Nama Pasien </th>
                         <th>Jam Advice KRS</th>
                         <th>Terbit SPRI</th>
                         <th>Selesai Pendaftaran</th>
@@ -286,7 +285,7 @@ $base_url = get_base_url();
     // }
 
     function initDataTable(filters = {}) {
-    if ($.fn.DataTable.isDataTable("#example1")) {
+      if ($.fn.DataTable.isDataTable("#example1")) {
         $("#example1").DataTable().destroy();
     }
 
@@ -312,47 +311,68 @@ $base_url = get_base_url();
         columns: [
             { data: null, render: (data, type, row, meta) => meta.row + meta.settings._iDisplayStart + 1 },
             { data: 'ruangan_nama' },
-            { data: 'no_rekam_medik', render: data => data || '-' },
-            { data: 'nama_pasien' },
-            { data: null, render: data => data.tgl_advismrs ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}` : `<button class="btn btn-success btn-sm" onclick="handleClickAdvis(${data.pendaftaran_id})"><span>Masukkan Jam Advis MRS</span></button>` },
+            { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien}` || '-' },
+            { 
+                data: null, 
+                render: data => {
+                    const ruanganId = "<?php echo $_SESSION['ruangan_id'] ?? ''; ?>";
+                    if (ruanganId == 7) {
+                        return `<button class="btn btn-success btn-sm" 
+                                    onclick="handleClickAdvis(${data.pendaftaran_id})" 
+                                    data-toggle="tooltip" title="Masukkan Jam Advis MRS">
+                                    <span>Masukkan Jam Advis MRS</span>
+                                </button>`;
+                    }
+                    return data.tgl_advismrs ? `${data.tgl_advismrs} <br> ${data.pegawai_advismrs}` : '-';
+                }
+            },
             { data: null, render: data => data.tgl_suratperintahranap || '-' },
             { data: null, render: data => data.tgladmisi || '-' },
-            { data: null, render: data => data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : `<button class="btn btn-success btn-sm" onclick="handleClick(${data.pendaftaran_id})"><span>Masukkan Jam Timbang Terima</span></button>` },
+            { 
+                data: null, 
+                render: data => {
+                    const instalasiId = "<?php echo $_SESSION['instalasi_id'] ?? ''; ?>";
+                    if (instalasiId == 4 || instalasiId == 76) {
+                        return `<button class="btn btn-success btn-sm" 
+                                    onclick="handleClick(${data.pendaftaran_id})" 
+                                    data-toggle="tooltip" title="Masukkan Jam Timbang Terima">
+                                    <span>Masukkan Jam Timbang Terima</span>
+                                </button>`;
+                    }
+                    return data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : '-';
+                }
+            },
             { data: null, render: data => `${data.totalWaktu}<br><span style="color:${data.color}">${data.keteranganTotal}</span>` },
-            // { data: null, render: (data, type, row) => row.loopKeterangan?.map(k => k.keterangan || 'No Data').join(', ') || `<a href="#" class="openDialogAdd" data-id="${row.pendaftaran_id}">Tambah Keterangan</a>` }
-            {
-    data: null,
-    render: ({ loopKeterangan, pendaftaran_id }) => {
-        let listKeterangan = `<ul>${
-            (Array.isArray(loopKeterangan) && loopKeterangan.length > 0)
-                ? loopKeterangan.map(({ keteranganrespontime_id, keterangan }) => 
-                  `
-                    <li>
-                        ${keterangan || 'No Data'}
-                        <a href="#" class="editKeterangan" data-id="${keteranganrespontime_id}">
-                            <i class="fa fa-pencil-alt text-primary"></i>
-                        </a>
-                        <a href="#" class="deleteKeterangan" data-id="${keteranganrespontime_id}">
-                            <i class="fa fa-trash text-danger"></i>
-                        </a>
-                    </li>
-                ` 
-                ).join('')
-                : '<li>Tidak ada keterangan</li>'
-        }</ul>`;
+            { 
+                data: null,
+                render: ({ loopKeterangan, pendaftaran_id }) => {
+                    let listKeterangan = `<ul>${
+                        (Array.isArray(loopKeterangan) && loopKeterangan.length > 0)
+                            ? loopKeterangan.map(({ keteranganrespontime_id, keterangan }) => 
+                              `<li>
+                                    ${keterangan || 'No Data'}
+                                    <a href="#" class="editKeterangan" data-id="${keteranganrespontime_id}" data-toggle="tooltip" title="Edit Keterangan">
+                                        <i class="fa fa-pencil-alt text-primary"></i>
+                                    </a>
+                                    <a href="#" class="deleteKeterangan" data-id="${keteranganrespontime_id}" data-toggle="tooltip" title="Hapus Keterangan">
+                                        <i class="fa fa-trash text-danger"></i>
+                                    </a>
+                                </li>`
+                            ).join('')
+                            : '<li>Tidak ada keterangan</li>'
+                    }</ul>`;
 
-        return `
-            <div>
-                ${listKeterangan}
-                <a href="#" class="openDialogAdd" style="text-align:center" data-id="${pendaftaran_id}">
-                    <i class="fa fa-plus-circle text-success"></i> Tambah Keterangan
-                </a>
-            </div>
-        `;
-    }
-}
- 
-          ],
+                    return `
+                        <div>
+                            ${listKeterangan}
+                            <a href="#" class="openDialogAdd" style="text-align:center" data-id="${pendaftaran_id}" data-toggle="tooltip" title="Tambah Keterangan">
+                                <i class="fa fa-plus-circle text-success"></i> Tambah Keterangan
+                            </a>
+                        </div>
+                    `;
+                }
+            }
+        ],
         pageLength: 10,
         buttons: [
             { extend: 'colvis', columns: ':not(.noVis)' },
@@ -366,7 +386,8 @@ $base_url = get_base_url();
             this.api().buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         }
     });
-}
+
+  }
 
   function updateKeterangan() {
         let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea

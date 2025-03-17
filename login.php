@@ -135,7 +135,7 @@ function loadDropdownData() {
                 if (data.status === 'success') {
                     // Empty the dropdown before appending new data
                     $('#dynamic-dropdown').empty();
-                    $('#dynamic-dropdown').append('<option value="">Pilih RUangan</option>'); // Default option
+                    $('#dynamic-dropdown').append('<option value="">Pilih Ruangan</option>'); // Default option
                     
                     // Loop through the returned data and populate the dropdown
                     data.options.forEach(function(option) {
