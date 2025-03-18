@@ -42,6 +42,7 @@ $base_url = get_base_url();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Laporan </title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet"
@@ -115,12 +116,11 @@ $base_url = get_base_url();
                       <div class="col-md-3">
                           <label class="form-label">Periode</label>
                           <select class="form-control" id="periode">
-                              <option>--Pilih--</option>
-                              <option value="Pendaftaran">Tanggal Pendaftaran</option>
-                              <option value="Admisi">Tanggal Admisi</option>
-                              <option value="Terima">Jam Timbang Terima</option>
-                              <option value="Advis">Tgl Advis KRS</option>
-                            </select>
+                            <option>--Pilih--</option>
+                            <option value="KRS" selected>Tanggal KRS</option>
+                            <option value="Pembayaran">Tanggal Pembayaran</option>
+                            <option value="Advis">Tgl Advis KRS</option>
+                          </select>
                       </div>
                       <div class="col-md-3">
                           <label class="form-label">Tgl </label>
@@ -130,12 +130,6 @@ $base_url = get_base_url();
                       <div class="col-md-6">
                           <label class="form-label">Nama Pasien</label>
                           <input type="text" id="nama_pasien" class="form-control" placeholder="Nama">
-                      </div>
-                      <div class="col-md-6 d-flex align-items-end">
-                          <div class="form-check">
-                              <input class="form-check-input" type="checkbox" id="sudahMRS">
-                              <label class="form-check-label" for="sudahMRS">Sudah KRS</label>
-                          </div>
                       </div>
                   </div>
                   <div class="row">
@@ -151,7 +145,16 @@ $base_url = get_base_url();
                               <option>--Pilih--</option>
                           </select>
                       </div>
-
+                      <div class="col-md-6 d-flex align-items-end">
+                          <div class="form-check">
+                              <input class="form-check-input" type="checkbox" id="sudahKRS" checked>
+                              <label class="form-check-label" for="sudahKRS">Sudah KRS</label>
+                          </div>
+                          <div class="form-check ml-2">
+                              <input class="form-check-input" type="checkbox" id="pasienBpjs" checked>
+                              <label class="form-check-label" for="pasienBpjs">Pasien BPJS</label>
+                          </div>
+                      </div>
 
                   </div>
           
@@ -255,8 +258,13 @@ $base_url = get_base_url();
             nama_pasien: $("#nama_pasien").val() || "",
             no_rekam_medik: $("#no_rekam_medik").val() || "",
             ruanganSelect: $("#ruanganSelect").val() || "",
+            pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
+            sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
             dateRangePicker: $("#dateRangePicker").val() || ""
         };
+        if ($.fn.DataTable.isDataTable("#example1")) {
+          $('#example1').DataTable().clear().destroy();
+        }
         loadData(filters);
     }
     function checkSession() {
@@ -320,7 +328,11 @@ $base_url = get_base_url();
                         if(instalasi_allow.includes(instalasi_id)){
                           return `${tgl_adviskrs} / ${pegawai_adviskrs}`;
                         }else{
-                          return '-'
+                          if(tgl_adviskrs!='-' || pegawai_adviskrs!='-'){
+                            return `${tgl_adviskrs} / ${pegawai_adviskrs}`;
+                          }else{
+                            return '-'
+                          }
                         }
                       }
                     }
@@ -338,7 +350,11 @@ $base_url = get_base_url();
                         if(instalasi_allow.includes(instalasi_id)){
                           return `${tgl_skfarmasi} / ${pegawai_skfarmasi}`;
                         }else{
-                          return '-';
+                          if(tgl_skfarmasi!='-' || pegawai_skfarmasi!='-'){
+                            return `${tgl_skfarmasi} / ${pegawai_skfarmasi}`;
+                          }else{
+                            return '-'
+                          }
                         }
                       }
                     }
@@ -380,13 +396,13 @@ $base_url = get_base_url();
                         row.loopKeterangan.forEach(item => {
                             // result += (item.keterangan || '-') + '<br> ';
                             if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
-                              result += item.ruangan_nama +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
                               result += ` <a href="#" class="openDialogAdd" onclick="openDialogUpdate(${item.keteranganrespontime_id})" style="color:black"><i class="fa-solid fa-pencil"></i></a>`;
                               result += ` <a href="#" class="openDialogAdd" onclick="openDialogDelete(${item.keteranganrespontime_id})" style="color:red"><i class="fa-regular fa-circle-xmark"></i></a>`;
                               result +=  ' <br>';
 
                             }else{
-                              result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
+                              result +=`<b>${item.ruangan_nama}</b>`  +' : '+ item.keterangan+ ' <br>';
                             }
                         });
 
@@ -601,9 +617,61 @@ $base_url = get_base_url();
             }
         });
     }
+    function loadDataRuangan(){
+
+      // Tambahkan Select2 CDN
+      const select2CDN = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js";
+      const select2CSS = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css";
+
+      // Tambahkan CSS Select2 jika belum ada
+      if (!$('link[href="' + select2CSS + '"]').length) {
+          $('head').append(`<link href="${select2CSS}" rel="stylesheet">`);
+      }
+
+      // Tambahkan JS Select2 jika belum ada
+      if (!$('script[src="' + select2CDN + '"]').length) {
+          $.getScript(select2CDN, function () {
+              $("#ruanganSelect").select2({
+                  placeholder: "--Pilih--",
+                  allowClear: true,
+                  multiple: true // Mengaktifkan multi-select
+              });
+          });
+      } else {
+          $("#ruanganSelect").select2({
+              placeholder: "--Pilih--",
+              allowClear: true,
+              multiple: true // Mengaktifkan multi-select
+          });
+      }
+
+      const URL_API = "backend/LoadRuanganKrs.php";
+      // Mengambil data dari API menggunakan Axios
+      axios.get(URL_API)
+          .then(response => {
+              const data = response.data.options; // Sesuaikan dengan struktur data dari API
+              
+              // console.log("data ", response);
+              // Hapus opsi default jika perlu
+              $("#ruanganSelect").html('<option value="">--Pilih--</option>');
+              
+              // Looping data dan menambahkan option ke dalam select
+              $.each(data, function(index, item) {
+                // console.log("Item ", item);
+                  $("#ruanganSelect").append(
+                      `<option value="${item.ruangan_id}">${item.ruangan_nama}</option>`
+                  );
+              });
+          })
+          .catch(error => {
+              console.error("Error fetching data: ", error);
+          });
+
+    }
     $(document).ready(function () {
       // Load data into DataTable
       loadData();
+      loadDataRuangan();
     });
 
     // Initialize the date range picker
