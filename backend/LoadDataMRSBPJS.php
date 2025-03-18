@@ -10,7 +10,7 @@ class LoadDataMRSBPJS {
     }
 
     
-    public function getData($draw, $limit, $offset, $searchValue, $no_rekam_medik = null, $nama_pasien = null, $periode = null, $ruanganSelect = null, $dateRangePicker = null, $session_instalasi_id, $session_ruangan_id) {
+    public function getData($draw, $limit, $offset, $searchValue, $no_rekam_medik = null, $nama_pasien = null, $periode = null, $ruanganSelect = [], $dateRangePicker = null, $session_instalasi_id, $session_ruangan_id,$sudahMRS) {
         $baseQuery = " FROM laporanmrsri_v WHERE 1=1 ";
         $params = [];
         $paramIndex = 1;
@@ -18,15 +18,15 @@ class LoadDataMRSBPJS {
         // Instalasi yang diizinkan
         $allowed_instalasi = [2, 8, 3, 73];
 
-        // var_dump(!in_array($session_instalasi_id, $allowed_instalasi));die;
-        if (empty($ruanganSelect) && !in_array($session_instalasi_id, $allowed_instalasi)) {
+        if ($ruanganSelect == "" && !in_array($session_instalasi_id, $allowed_instalasi)) {
             // Jika instalasi_id tidak sesuai, paksa filter ruangan_id = 7
             $baseQuery .= " AND ruangan_id = $" . $paramIndex;
             $params[] = 7;
             $paramIndex++;
         } else {
+            // var_dump($ruanganSelect);die;
             // Jika instalasi_id sesuai, filter berdasarkan ruangan dari session
-            if (!empty($ruanganSelect) && sizeof($ruanganSelect) == 1) {
+            if (!empty($ruanganSelect) && sizeof($ruanganSelect) == 1 && $ruanganSelect[0] !== "") {
                 $baseQuery .= " AND ruangan_id = $" . $paramIndex;
                 $params[] = $ruanganSelect[0];
                 $paramIndex++;
@@ -59,6 +59,7 @@ class LoadDataMRSBPJS {
             $paramIndex++;
         }
 
+        
                 // Pilih kolom tanggal berdasarkan periode yang dipilih
             $column = "tgl_pendaftaran"; // Default
             if (!empty($periode)) {
@@ -116,6 +117,9 @@ class LoadDataMRSBPJS {
         $baseQuery .= " AND ruangan_id IN (" . implode(", ", $placeholders) . ")";
     }
     
+        if($sudahMRS) { 
+            $baseQuery .= " AND pasienadmisi_id is not null";
+        }
 
         // Hitung total data sebelum filtering
         $countTotalQuery = "SELECT COUNT(*) FROM laporanmrsri_v";
@@ -123,7 +127,7 @@ class LoadDataMRSBPJS {
 
         // Hitung total data setelah filtering
         $countFilteredQuery = "SELECT COUNT(*)" . $baseQuery;
-        // var_dump($params);
+        // var_dump($countFilteredQuery);die;
         $totalFiltered = pg_fetch_result(pg_query_params($this->conn, $countFilteredQuery, $params), 0, 0);
 
         // Ambil data sesuai pagination
@@ -167,15 +171,34 @@ class LoadDataMRSBPJS {
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT * FROM keteranganrespontime_t WHERE pendaftaran_id = $1 AND is_deleted = FALSE";
-            $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id']]);
-    
+            $baseQuery1 = "SELECT r.ruangan_nama, t.* 
+            FROM keteranganrespontime_t t  
+            JOIN ruangan_m r ON t.ruangan_id = r.ruangan_id 
+            WHERE t.pendaftaran_id = $1 
+            AND (is_deleted = $2 OR is_deleted IS NULL)
+            AND jenis = $3
+            ORDER by t.keteranganrespontime_id desc";
+            $resultDetails = pg_query_params($this->conn, $baseQuery1, [$row['pendaftaran_id'], 'false', 'Respon Time MRS']);
+
             $detailData = [];
             while ($detailRow = pg_fetch_assoc($resultDetails)) {
                 $detailData[] = $detailRow;
             }
-    
+                
+            // Ambil lookup value dari `lookup_m`
+            $lookupQuery = "SELECT lookup_value FROM lookup_m WHERE lookup_type = 'insertketerangan'";
+            $resultLookup = pg_query($this->conn, $lookupQuery);
+
+            $lookupValues = [];
+            while ($lookupRow = pg_fetch_assoc($resultLookup)) {
+                $lookupValues[] = $lookupRow['lookup_value'];
+            }
+
+            // Variabel baru untuk menyimpan hasil lookup
+            $lookupInsertKeterangan = $lookupValues;
+
             // Tambahkan data tambahan ke dalam `rowData`
+            $rowData['lookupInsertKeterangan'] = $lookupInsertKeterangan;
             $rowData['loopKeterangan'] = $detailData;
             $rowData['color'] = $color;
             $rowData['totalWaktu'] = $totalWaktu;
@@ -213,6 +236,7 @@ $periode = isset($_GET['periode']) ? $_GET['periode'] : "";
 $dateRangePicker = isset($_GET['dateRangePicker']) ? $_GET['dateRangePicker'] : "";
 $nama_pasien = isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "";
 $ruanganSelect = isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : "";
+$sudahMRS = !empty($_GET['sudahMRS']) ? $_GET['sudahMRS'] : "";
 // Ambil instalasi_id dan ruangan_id dari session
 $session_instalasi_id = !empty( $_SESSION['instalasi_id']) ?  $_SESSION['instalasi_id'] : null;
 $session_ruangan_id = !empty( $ruanganSelect[0]) ?  $ruanganSelect  : $_SESSION['ruangan_id'];
@@ -227,7 +251,7 @@ if ($session_instalasi_id === null || $session_ruangan_id === null) {
 }
 
 $loadData = new LoadDataMRSBPJS($conn);
-$data = $loadData->getData($draw, $limit, $offset, $searchValue, $no_rekam_medik, $nama_pasien, $periode, $ruanganSelect, $dateRangePicker, $session_instalasi_id, $session_ruangan_id);
+$data = $loadData->getData($draw, $limit, $offset, $searchValue, $no_rekam_medik, $nama_pasien, $periode, $ruanganSelect, $dateRangePicker, $session_instalasi_id, $session_ruangan_id,$sudahMRS);
 
 header('Content-Type: application/json');
 echo json_encode($data);
