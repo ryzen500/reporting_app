@@ -295,7 +295,9 @@ $base_url = get_base_url();
                     render: function (data,type,row) {
                       const tgl_adviskrs = (row.tgl_adviskrs === ''||row.tgl_adviskrs ===null) ? '-' : row.tgl_adviskrs;
                       const pegawai_adviskrs = (row.pegawai_adviskrs === ''||row.pegawai_adviskrs ===null) ? '-' : row.pegawai_adviskrs;
-                      if( (row.tgl_adviskrs === ''||row.tgl_adviskrs ===null) &&(row.pegawai_adviskrs === ''||row.pegawai_adviskrs ===null) ){
+                      const instalasi_id = <?php echo $_SESSION['instalasi_id']?> 
+                      const instalasi_allow = [4,76];
+                      if( (row.tgl_adviskrs === ''||row.tgl_adviskrs ===null) &&(row.pegawai_adviskrs === ''||row.pegawai_adviskrs ===null) && instalasi_allow.includes(instalasi_id)){
                         return renderButtons(row.pasienadmisi_id);
                       }else{
                         return `${tgl_adviskrs} / ${pegawai_adviskrs}`;
@@ -307,7 +309,9 @@ $base_url = get_base_url();
                     render: function (data,type,row) {
                       const tgl_skfarmasi = (row.tgl_skfarmasi === ''||row.tgl_skfarmasi ===null) ? '-' : row.tgl_skfarmasi;
                       const  pegawai_skfarmasi= (row.pegawai_skfarmasi === ''||row.pegawai_skfarmasi ===null) ? '-' : row.pegawai_skfarmasi;
-                      if( (tgl_skfarmasi==='-') && (pegawai_skfarmasi==='-') ){
+                      const instalasi_id = <?php echo $_SESSION['instalasi_id']?> 
+                      const instalasi_allow = [4,76];
+                      if( (tgl_skfarmasi==='-') && (pegawai_skfarmasi==='-')  && instalasi_allow.includes(instalasi_id)){
                         return renderButtonsk(row.pasienadmisi_id);
                       }else{
                         return `${tgl_skfarmasi} / ${pegawai_skfarmasi}`;
@@ -342,7 +346,9 @@ $base_url = get_base_url();
                       //   return result; // Menghapus koma dan spasi terakhir                  
                       // }else{
                       //   return "-";
-                      // }     
+                      // }   
+                      const instalasi_id = <?php echo $_SESSION['instalasi_id']?> 
+                      const instalasi_allow = [4,76];  
                       if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
                         let result = ''; // Variabel untuk menyimpan hasil looping
                         row.loopKeterangan.forEach(item => {
@@ -357,12 +363,19 @@ $base_url = get_base_url();
                               result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
                             }
                         });
-                        result += `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+
+                        if( instalasi_allow.includes(instalasi_id)){
+                          result += `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+                        }
                         return result; // Menghapus koma dan spasi terakhir    
                         // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
 
                       } else {
-                        return `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+                        if( instalasi_allow.includes(instalasi_id)){
+                          return `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+                        }else{
+                          return '-';
+                        }
                       }
                     }
                 },
