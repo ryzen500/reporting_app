@@ -45,7 +45,7 @@ $result = pg_execute($conn, "insert_keteranganrespontime", [
 
 // Berikan response
 if ($result) {
-    sendResponse(200, ['success' => 'Data berhasil disimpan']);
+    sendResponse(200, ['status'=>'success','success' => 'Data Berhasil Disimpan']);
 } else {
     sendResponse(500, ['error' => 'Gagal menyimpan data']);
 }

@@ -32,8 +32,11 @@ $base_url = get_base_url();
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="./plugins/fontawesome-free/css/all.min.css">
-  <!-- DataTables -->
+  <!-- <link rel="stylesheet" href="./plugins/fontawesome-free/css/all.min.css">
+    -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- DataTables -->
   <link rel="stylesheet" href="./plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
   <link rel="stylesheet" href="./plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
   <link rel="stylesheet" href="./plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
@@ -105,7 +108,6 @@ $base_url = get_base_url();
                 <div class="col-md-3">
                     <label class="form-label">Periode</label>
                     <select class="form-control" id="periode">
-                        <option>--Pilih--</option>
                         <option value="Pendaftaran">Tanggal Pendaftaran</option>
                         <option value="Admisi">Tanggal Admisi</option>
                         <option value="Terima">Jam Timbang Terima</option>
@@ -122,10 +124,7 @@ $base_url = get_base_url();
                     <input type="text" id="nama_pasien" class="form-control" placeholder="Nama">
                 </div>
                 <div class="col-md-6 d-flex align-items-end">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="sudahMRS">
-                        <label class="form-check-label" for="sudahMRS">Sudah MRS</label>
-                    </div>
+                 
                 </div>
             </div>
             <div class="row">
@@ -133,12 +132,17 @@ $base_url = get_base_url();
                 <div class="col-md-6">
                     <label class="form-label">No RM</label>
                     <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
-                </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="sudahMRS">
+                        <label class="form-check-label" for="sudahMRS">Sudah MRS</label>
+                    </div>
+                  </div>
 
+                
                 <div class="col-md-6">
                     <label class="form-label">Ruangan</label>
                     <select id="ruanganSelect" class="form-control">
-                        <option>--Pilih--</option>
+                        <option></option>
                     </select>
                 </div>
 
@@ -286,8 +290,8 @@ $base_url = get_base_url();
 
     function initDataTable(filters = {}) {
       if ($.fn.DataTable.isDataTable("#example1")) {
-        $("#example1").DataTable().destroy();
-    }
+        $('#example1').DataTable().clear().destroy();
+          }
 
     $("#example1").DataTable({
         serverSide: true,
@@ -316,10 +320,12 @@ $base_url = get_base_url();
                 data: null, 
                 render: data => {
                     const ruanganId = "<?php echo $_SESSION['ruangan_id'] ?? ''; ?>";
-                    if (ruanganId == 7) {
+                    const instalasiId = "<?php echo $_SESSION['instalasi_id'] ?? ''; ?>";
+
+                    if (instalasiId ==  2 || instalasiId == 8 || instalasiId == 3 ||  instalasiId == 73) {
                         return `<button class="btn btn-success btn-sm" 
                                     onclick="handleClickAdvis(${data.pendaftaran_id})" 
-                                    data-toggle="tooltip" title="Masukkan Jam Advis MRS">
+                                    data-toggle="tooltip" title="Klik untuk update jam advis mrs">
                                     <span>Masukkan Jam Advis MRS</span>
                                 </button>`;
                     }
@@ -335,7 +341,7 @@ $base_url = get_base_url();
                     if (instalasiId == 4 || instalasiId == 76) {
                         return `<button class="btn btn-success btn-sm" 
                                     onclick="handleClick(${data.pendaftaran_id})" 
-                                    data-toggle="tooltip" title="Masukkan Jam Timbang Terima">
+                                    data-toggle="tooltip" title="Klik untuk update jam timbang terima">
                                     <span>Masukkan Jam Timbang Terima</span>
                                 </button>`;
                     }
@@ -343,42 +349,98 @@ $base_url = get_base_url();
                 }
             },
             { data: null, render: data => `${data.totalWaktu}<br><span style="color:${data.color}">${data.keteranganTotal}</span>` },
-            { 
-                data: null,
-                render: ({ loopKeterangan, pendaftaran_id }) => {
-                    let listKeterangan = `<ul>${
-                        (Array.isArray(loopKeterangan) && loopKeterangan.length > 0)
-                            ? loopKeterangan.map(({ keteranganrespontime_id, keterangan }) => 
-                              `<li>
-                                    ${keterangan || 'No Data'}
-                                    <a href="#" class="editKeterangan" data-id="${keteranganrespontime_id}" data-toggle="tooltip" title="Edit Keterangan">
-                                        <i class="fa fa-pencil-alt text-primary"></i>
-                                    </a>
-                                    <a href="#" class="deleteKeterangan" data-id="${keteranganrespontime_id}" data-toggle="tooltip" title="Hapus Keterangan">
-                                        <i class="fa fa-trash text-danger"></i>
-                                    </a>
-                                </li>`
-                            ).join('')
-                            : '<li>Tidak ada keterangan</li>'
-                    }</ul>`;
+            {
+                    data: null,
+                    render: function (data,type,row) {
+                      // if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
+                      //   let result = ''; // Variabel untuk menyimpan hasil looping
+                      //   row.loopKeterangan.forEach(item => {
+                      //       result += (item.nama_keterangan || 'No Data') + ', ';
+                      //   });
+                      //   return result; // Menghapus koma dan spasi terakhir                  
+                      // }else{
+                      //   return "-";
+                      // }     
+                      const lookupArray = row.lookupInsertKeterangan[0].split(",").map(Number);
+                      console.log("Row ", row.loopKeterangan.length > 0);
+                      // Cek apakah session.instalasi_id ada dalam lookupArray
+                      const isAllowed = lookupArray.includes(Number(<?php echo $_SESSION['instalasi_id']?>));
 
-                    return `
-                        <div>
-                            ${listKeterangan}
-                            <a href="#" class="openDialogAdd" style="text-align:center" data-id="${pendaftaran_id}" data-toggle="tooltip" title="Tambah Keterangan">
-                                <i class="fa fa-plus-circle text-success"></i> Tambah Keterangan
-                            </a>
-                        </div>
-                    `;
-                }
-            }
+                      if ( row.loopKeterangan.length > 0) {
+                        let result = ''; // Variabel untuk menyimpan hasil looping
+                        row.loopKeterangan.forEach(item => {
+                            // result += (item.keterangan || '-') + '<br> ';
+                            console.log("Item Ruangan ",  <?php echo $_SESSION['ruangan_id']?>);
+                            console.log("Item Ruangan ",  parseInt(item.ruangan_id) );
+
+                            if(parseInt(item.ruangan_id) == <?php echo $_SESSION['ruangan_id']?>){
+                              console.log("Kick Ruangan");
+
+                              result += item.ruangan_nama +' : '+ item.keterangan;
+                              result += `  <a href="#" class="editKeterangan" data-id="${item.keteranganrespontime_id}" data-toggle="tooltip" title="Klik untuk merubah keterangan">
+                                        <i class="fa fa-pencil-alt text-primary"></i>
+                                    </a>`;
+                              result += `  <a href="#" class="deleteKeterangan" data-id="${item.keteranganrespontime_id}" data-toggle="tooltip" title="Klik untuk menghapus keterangan">
+                                        <i class="fa fa-trash text-danger"></i>
+                                    </a>`;
+                              result +=  ' <br>';
+
+                            }else{
+
+                              
+                              result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
+
+                            }
+                        });
+
+                        result += `<div class="col-sm-12 text-center"> 
+                                <a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
+                                    <i class="fa fa-plus-circle text-success"></i> 
+                                </a></div>`;
+                        return  isAllowed ? result : '<div class="col-sm-12 text-center"> - </div>' ; // Menghapus koma dan spasi terakhir    
+                        // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
+
+                      } else {
+                        return  isAllowed ?  `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
+                                    <i class="fa fa-plus-circle text-success"></i> 
+                                </a></div>` : '<div class="col-sm-12 text-center"> - </div>' ; // Menghapus koma dan spasi terakhir    
+                      }
+                    }
+                },
+
+
         ],
         pageLength: 10,
         buttons: [
             { extend: 'colvis', columns: ':not(.noVis)' },
-            { extend: 'excel', exportOptions: { columns: ':visible' } },
-            { extend: 'csv', exportOptions: { columns: ':visible' } },
-            { extend: 'pdf', exportOptions: { columns: ':visible' } },
+            { 
+            extend: 'excel', 
+            text: 'Excel',
+            exportOptions: { 
+                columns: ':visible', 
+                modifier: { search: 'applied', order: 'applied', page: 'all' } // Tanpa pagination
+            } 
+        },
+        { 
+            extend: 'csv', 
+            text: 'CSV',
+            exportOptions: { 
+                columns: ':visible', 
+                modifier: { search: 'applied', order: 'applied', page: 'all' } 
+            } 
+        },
+        { 
+            extend: 'pdf', 
+            text: 'PDF',
+            exportOptions: { 
+                columns: ':visible', 
+                modifier: { search: 'applied', order: 'applied', page: 'all' } 
+            },
+            customize: function (doc) {
+                doc.pageMargins = [20, 20, 20, 20]; // Mengatur margin
+                doc.defaultStyle.fontSize = 10; // Ukuran font default
+            }
+        },          
             { extend: 'copy', exportOptions: { columns: ':visible' } },
             { extend: 'print', exportOptions: { columns: ':visible' } }
         ],
@@ -407,11 +469,8 @@ $base_url = get_base_url();
           
                     Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
                     $("#myModalEdit").modal("hide"); // Tutup modal
-
-                    $('#example1').DataTable().clear().destroy();
-                    loadData();
-                
-              },
+                    cari();
+                  },
               error: function () {
                   alert("Terjadi kesalahan saat menyimpan data.");
               }
@@ -437,11 +496,17 @@ $base_url = get_base_url();
                   keterangan: keterangan
               },
               success: function (response) {
-                  let res = JSON.parse(response);
-                  if (res.status === "success") {
-                      alert("Keterangan berhasil disimpan!");
-                      $("#keteranganModal").modal("hide"); // Tutup modal
-                  } else {
+                
+                // let res = JSON.parse(response);
+                let res = response;
+                if (res.status === "success") {
+                      // alert("Keterangan berhasil disimpan!");
+                      Swal.fire('Tersimpan!', 'Data berhasil disimpan.', 'success');
+
+                      $("#myModal").modal("hide"); // Tutup modal
+                      
+                      cari();
+                    } else {
                       alert("Gagal menyimpan keterangan: " + res.message);
                   }
               },
@@ -461,7 +526,8 @@ $base_url = get_base_url();
         nama_pasien: $("#nama_pasien").val() || "",
         no_rekam_medik: $("#no_rekam_medik").val() || "",
         ruanganSelect: $("#ruanganSelect").val() || "",
-        dateRangePicker: $("#dateRangePicker").val() || ""
+        dateRangePicker: $("#dateRangePicker").val() || "",
+        sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
     };
     initDataTable(filters);
 }
@@ -476,22 +542,16 @@ $base_url = get_base_url();
         $('head').append(`<link href="${select2CSS}" rel="stylesheet">`);
     }
     
-    // Tambahkan JS Select2 jika belum ada
-    if (!$('script[src="' + select2CDN + '"]').length) {
+    // // Tambahkan JS Select2 jika belum ada
+    // if (!$('script[src="' + select2CDN + '"]').length) {
         $.getScript(select2CDN, function () {
             $("#ruanganSelect").select2({
-                placeholder: "--Pilih--",
+        
                 allowClear: true,
                 multiple: true // Mengaktifkan multi-select
             });
         });
-    } else {
-        $("#ruanganSelect").select2({
-            placeholder: "--Pilih--",
-            allowClear: true,
-            multiple: true // Mengaktifkan multi-select
-        });
-    }
+ 
     
     const URL_API = "backend/LoadRuangan.php";
     
@@ -502,7 +562,7 @@ $base_url = get_base_url();
             
             // console.log("data ", response);
             // Hapus opsi default jika perlu
-            $("#ruanganSelect").html('<option value="">--Pilih--</option>');
+            $("#ruanganSelect").html('<option value=""></option>');
             
             // Looping data dan menambahkan option ke dalam select
             $.each(data, function(index, item) {
@@ -635,14 +695,24 @@ $base_url = get_base_url();
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const formattedToday = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    const formattedYesterday = yesterday.toISOString().split('T')[0];
+
     flatpickr("#dateRangePicker", {
         mode: "range",
-        dateFormat: "Y-m-d", // Format tanggal
+        dateFormat: "Y-m-d",
+        defaultDate: [formattedYesterday, formattedToday], // Set default range to yesterday and today
         onClose: function(selectedDates, dateStr, instance) {
             console.log("Selected range:", dateStr);
         }
     });
 });
+
+
 
     function printData(id) {
       console.log('Edit data with ID:', id);
@@ -668,8 +738,7 @@ $base_url = get_base_url();
             data: { id },
             success: function (response) {
               Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
-              $('#example1').DataTable().clear().destroy();
-              loadData();
+              cari();
             },
             error: function (error) {
               console.error('Error deleting data:', error);
@@ -747,7 +816,7 @@ $base_url = get_base_url();
             data: { keteranganrespontime_id: keteranganrespontime_id },
             success: function (response) {
                 $('#myModalEdit').modal('hide');   // Tampilkan modal
-                loadData();
+                cari();
               },
             error: function () {
                 alert('Gagal mengambil data.');
@@ -763,7 +832,8 @@ $base_url = get_base_url();
     
     $(document).ready(function () {
       // Load data into DataTable
-      loadData();
+      // loadData();
+      cari();
       loadDataRuangan();
     });
   </script>
