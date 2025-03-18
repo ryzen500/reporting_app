@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
+require_once 'backend/config.php'; // Pastikan koneksi ke database ada di file ini
 
 session_start();
 if (!isset( $_SESSION['nama_pemakai'])) {
@@ -18,6 +19,22 @@ function get_base_url()
   return rtrim($base_url, '/') . '/';
 }
 
+// Query untuk mengambil data dari database
+$baseQuery = "SELECT t.lookup_value 
+               FROM lookup_m t  
+               WHERE t.lookup_type = $1";
+
+// Eksekusi query dengan parameter
+$lookup = pg_query_params($conn, $baseQuery, ['insertketerangan']);
+$lookupResults = pg_fetch_all($lookup);
+if ($lookupResults) {
+  $values = array_column($lookupResults, 'lookup_value'); // Extract lookup_value column
+  $lookupString = implode(',', $values); // Convert array to a comma-separated string
+  $allow_add_temp = explode(',', $lookupString);
+} else {
+  $allow_add_temp = [];
+}
+$allow_add = json_encode($allow_add_temp); // Convert PHP array to JSON
 $base_url = get_base_url();
 ?>
 
@@ -300,7 +317,11 @@ $base_url = get_base_url();
                       if( (row.tgl_adviskrs === ''||row.tgl_adviskrs ===null) &&(row.pegawai_adviskrs === ''||row.pegawai_adviskrs ===null) && instalasi_allow.includes(instalasi_id)){
                         return renderButtons(row.pasienadmisi_id);
                       }else{
-                        return `${tgl_adviskrs} / ${pegawai_adviskrs}`;
+                        if(instalasi_allow.includes(instalasi_id)){
+                          return `${tgl_adviskrs} / ${pegawai_adviskrs}`;
+                        }else{
+                          return '-'
+                        }
                       }
                     }
                 },
@@ -314,7 +335,11 @@ $base_url = get_base_url();
                       if( (tgl_skfarmasi==='-') && (pegawai_skfarmasi==='-')  && instalasi_allow.includes(instalasi_id)){
                         return renderButtonsk(row.pasienadmisi_id);
                       }else{
-                        return `${tgl_skfarmasi} / ${pegawai_skfarmasi}`;
+                        if(instalasi_allow.includes(instalasi_id)){
+                          return `${tgl_skfarmasi} / ${pegawai_skfarmasi}`;
+                        }else{
+                          return '-';
+                        }
                       }
                     }
                 },
@@ -347,8 +372,9 @@ $base_url = get_base_url();
                       // }else{
                       //   return "-";
                       // }   
-                      const instalasi_id = <?php echo $_SESSION['instalasi_id']?> 
-                      const instalasi_allow = [4,76];  
+                      const instalasi_id = "<?php echo $_SESSION['instalasi_id']?>";
+                      const instalasi_allow = <?php echo $allow_add ?>;  
+                      // const instalasi_allow = [4,76];  
                       if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
                         let result = ''; // Variabel untuk menyimpan hasil looping
                         row.loopKeterangan.forEach(item => {
