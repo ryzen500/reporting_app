@@ -86,7 +86,7 @@ class LoadDataMRSBPJS {
                     $startDate = trim($dates[0]);
                     $endDate = trim($dates[1]);
 
-                    $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                    $baseQuery .= "AND $column is not null  AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
                     $params[] = $startDate;
                     $params[] = $endDate;
                     $paramIndex += 2;
@@ -94,7 +94,7 @@ class LoadDataMRSBPJS {
             } 
             // Jika dateRangePicker kosong tetapi periode diisi, gunakan filter default awal dan akhir bulan
             else if (!empty($periode)) {
-                $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                $baseQuery .= "AND $column is not null AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
                 $params[] = date("Y-m-01"); // Awal bulan
                 $params[] = date("Y-m-t");  // Akhir bulan
                 $paramIndex += 2;
@@ -117,21 +117,24 @@ class LoadDataMRSBPJS {
         $baseQuery .= " AND ruangan_id IN (" . implode(", ", $placeholders) . ")";
     }
     
-        if($sudahMRS) { 
+        if($sudahMRS === "true") { 
             $baseQuery .= " AND pasienadmisi_id is not null";
         }
 
+        // var_dump($sudahMRS );die;
         // Hitung total data sebelum filtering
         $countTotalQuery = "SELECT COUNT(*) FROM laporanmrsri_v";
         $totalRecords = pg_fetch_result(pg_query($this->conn, $countTotalQuery), 0, 0);
 
         // Hitung total data setelah filtering
         $countFilteredQuery = "SELECT COUNT(*)" . $baseQuery;
-        // var_dump($countFilteredQuery);die;
         $totalFiltered = pg_fetch_result(pg_query_params($this->conn, $countFilteredQuery, $params), 0, 0);
 
         // Ambil data sesuai pagination
-        $query = "SELECT *" . $baseQuery . " ORDER BY pendaftaran_id DESC LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);        $params[] = $limit;
+        $query = "SELECT *" . $baseQuery . " ORDER BY pendaftaran_id DESC LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);     
+        $params[] = $limit;
+        // var_dump($params,$query);die;
+
         $params[] = $offset;
 
         $result = pg_query_params($this->conn, $query, $params);
@@ -149,7 +152,7 @@ class LoadDataMRSBPJS {
             $rowData = $row;
             $totalWaktu = '-';
             $color ='black';
-            $keterangan='Jam Advis KRS atau Jam Timbang Terima Kosong';
+            $keterangan='Jam Advis MRS atau Jam Timbang Terima Kosong';
             if(!empty($row['tgl_timbangterima']) && !empty($row['tgl_advismrs']) ){
                 $tgl_timbangterima = new DateTime($row['tgl_timbangterima']); // Konversi ke DateTime
                 $tgl_advismrs = new DateTime($row['tgl_advismrs']); // Konversi ke DateTime
@@ -236,7 +239,7 @@ $periode = isset($_GET['periode']) ? $_GET['periode'] : "";
 $dateRangePicker = isset($_GET['dateRangePicker']) ? $_GET['dateRangePicker'] : "";
 $nama_pasien = isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "";
 $ruanganSelect = isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : "";
-$sudahMRS = !empty($_GET['sudahMRS']) ? $_GET['sudahMRS'] : "";
+$sudahMRS = !empty($_GET['sudahMRS']) ? $_GET['sudahMRS'] : false;
 // Ambil instalasi_id dan ruangan_id dari session
 $session_instalasi_id = !empty( $_SESSION['instalasi_id']) ?  $_SESSION['instalasi_id'] : null;
 $session_ruangan_id = !empty( $ruanganSelect[0]) ?  $ruanganSelect  : $_SESSION['ruangan_id'];

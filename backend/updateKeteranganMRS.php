@@ -26,7 +26,7 @@ $update_time = date("Y-m-d H:i:s");
 // Gunakan `pg_prepare` untuk mencegah SQL Injection pada UPDATE
 pg_prepare($conn, "update_keteranganrespontime", 
     "UPDATE keteranganrespontime_t 
-     SET keterangan = $1, update_time = $2, update_loginpemakai_id = $3 , is_deleted = $5 , 
+     SET keterangan = $1, update_time = $2, update_loginpemakai_id = $3 , is_deleted = $5 
      WHERE keteranganrespontime_id = $4"
 );
 

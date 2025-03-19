@@ -27,7 +27,7 @@ $data = pg_fetch_assoc($result); // Ambil data dalam bentuk array asosiatif
 
 ?>
 <label for="keterangan"><strong>Keterangan:</strong></label>
-<textarea id="keterangan" name="keterangan" class="form-control" rows="3"><?php echo htmlspecialchars($data['keterangan']); ?></textarea>
+<textarea id="keteranganMRS" name="keterangan" class="form-control" rows="3"><?php echo htmlspecialchars($data['keterangan']); ?></textarea>
 <input type="hidden" id="keteranganrespontime_id" name="keteranganrespontime_id" value="<?php echo htmlspecialchars($keteranganrespontime_id); ?>">
 <hr>
 
