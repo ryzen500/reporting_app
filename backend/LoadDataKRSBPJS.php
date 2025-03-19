@@ -85,8 +85,8 @@ class LoadDataKRSBPJS {
             }else{
                 $startDate = trim($dates[0]);
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = $startDate;
-                $params[] = $startDate;
+                $params[] = $startDate. " 00:00:00";
+                $params[] = $startDate. " 23:59:59";
                 $paramIndex += 2;
             }
         }else{

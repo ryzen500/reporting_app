@@ -66,6 +66,14 @@ $base_url = get_base_url();
     .container {
       padding-top: 50px;
     }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+      background-color: #e4e4e4;
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+
+    color: black;
+
+}
   </style>
 </head>
 
