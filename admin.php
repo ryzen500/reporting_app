@@ -227,7 +227,7 @@ $base_url = get_base_url();
         </div>
       </section>
     </div>
-    <?php include 'footer.php'; ?>
+    <?php // include 'footer.php'; ?>
   </div>
 
   <!-- External Scripts -->
@@ -721,6 +721,7 @@ $base_url = get_base_url();
               });
             // Setelah semua data ditambahkan, set nilai terpilih
             $("#ruanganSelect").val(selectedValues).trigger("change");
+     
           })
           .catch(error => {
               console.error("Error fetching data: ", error);

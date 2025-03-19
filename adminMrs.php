@@ -394,7 +394,7 @@ $base_url = get_base_url();
                             if(parseInt(item.ruangan_id) == <?php echo $_SESSION['ruangan_id']?>){
                               console.log("Kick Ruangan");
 
-                              result += item.ruangan_nama +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
                               result += `  <a href="#" class="editKeterangan" data-id="${item.keteranganrespontime_id}" data-toggle="tooltip" title="Klik untuk merubah keterangan">
                                         <i class="fa fa-pencil-alt text-primary"></i>
                                     </a>`;
@@ -573,27 +573,39 @@ $base_url = get_base_url();
     
     const URL_API = "backend/LoadRuangan.php";
     
-    // Mengambil data dari API menggunakan Axios
     axios.get(URL_API)
-        .then(response => {
-            const data = response.data.options; // Sesuaikan dengan struktur data dari API
-            
-            // console.log("data ", response);
-            // Hapus opsi default jika perlu
-            $("#ruanganSelect").html('<option value=""></option>');
-            
-            // Looping data dan menambahkan option ke dalam select
-            $.each(data, function(index, item) {
-              // console.log("Item ", item);
-                $("#ruanganSelect").append(
-                    `<option value="${item.ruangan_id}">${item.ruangan_nama}</option>`
-                );
-            });
-        })
-        .catch(error => {
-            console.error("Error fetching data: ", error);
+    .then(response => {
+        const data = response.data.options; // Sesuaikan dengan struktur data dari API
+
+        let selectedValues = [];
+        const instalasi_id = <?php echo $_SESSION['instalasi_id']?>;
+        const ruangan_id = <?php echo $_SESSION['ruangan_id']?>;
+
+        const instalasi_allow = [2,8,3,73];
+
+        // Looping data dan menambahkan option ke dalam select
+        $.each(data, function(index, item) {
+            $("#ruanganSelect").append(
+                `<option value="${item.ruangan_id}">${item.ruangan_nama}</option>`
+            );
         });
 
+        // Cek apakah instalasi_id ada dalam daftar instalasi_allow
+        if(instalasi_allow.includes(instalasi_id)){
+            if(data.some(item => parseInt(item.ruangan_id) === ruangan_id)){
+                selectedValues.push(ruangan_id);
+            } 
+          } else {
+            // selectedValues.push(ruangan_id); // Jika instalasi_id tidak diizinkan, push ruangan_id
+            selectedValues.push(7); // Jika tidak cocok, push 7
+        }
+
+        // Set nilai terpilih dalam select
+        $("#ruanganSelect").val(selectedValues).trigger("change");
+    })
+    .catch(error => {
+        console.error("Error fetching data: ", error);
+    });
     }
  
     function loadData() {
