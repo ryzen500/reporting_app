@@ -142,7 +142,7 @@ $base_url = get_base_url();
                       <div class="col-md-6">
                           <label class="form-label">Ruangan</label>
                           <select id="ruanganSelect" class="form-control">
-                              <option>--Pilih--</option>
+                              <option value="">--Pilih--</option>
                           </select>
                       </div>
                       <div class="col-md-6 d-flex align-items-end">
@@ -287,6 +287,18 @@ $base_url = get_base_url();
                 url: `backend/LoadDataKRSBPJS.php`,
                 type: 'GET',
                 data: function (d) {
+                  if (Object.keys(filters).length === 0) {
+                      let filters_temp = {
+                          periode: $("#periode").val() || "",
+                          nama_pasien: $("#nama_pasien").val() || "",
+                          no_rekam_medik: $("#no_rekam_medik").val() || "",
+                          ruanganSelect: $("#ruanganSelect").val() || "",
+                          pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
+                          sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
+                          dateRangePicker: $("#dateRangePicker").val() || ""
+                      };
+                      filters=filters_temp;
+                    }
                     return {
                         draw:d.draw,
                         limit: d.length, // Menggunakan length sebagai limit
@@ -397,8 +409,8 @@ $base_url = get_base_url();
                             // result += (item.keterangan || '-') + '<br> ';
                             if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
                               result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
-                              result += ` <a href="#" class="openDialogAdd" onclick="openDialogUpdate(${item.keteranganrespontime_id})" style="color:black"><i class="fa-solid fa-pencil"></i></a>`;
-                              result += ` <a href="#" class="openDialogAdd" onclick="openDialogDelete(${item.keteranganrespontime_id})" style="color:red"><i class="fa-regular fa-circle-xmark"></i></a>`;
+                              result += ` <a href="#" class="openDialogUpdate" onclick="openDialogUpdate(${item.keteranganrespontime_id})" style="color:black" data-toggle="tooltip" title="Klik untuk merubah keterangan"><i class="fa-solid fa-pencil"></i></a>`;
+                              result += ` <a href="#" class="openDialogDelete" onclick="openDialogDelete(${item.keteranganrespontime_id})" style="color:red" data-toggle="tooltip" title="Klik untuk menghapus keterangan"><i class="fa-regular fa-circle-xmark"></i></a>`;
                               result +=  ' <br>';
 
                             }else{
@@ -407,14 +419,14 @@ $base_url = get_base_url();
                         });
 
                         if( instalasi_allow.includes(instalasi_id)){
-                          result += `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+                          result += `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green" data-toggle="tooltip" title="Klik untuk menambahkan keterangan"><i class="fa-solid fa-circle-plus"></i></a></div>`;
                         }
                         return result; // Menghapus koma dan spasi terakhir    
                         // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
 
                       } else {
                         if( instalasi_allow.includes(instalasi_id)){
-                          return `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green"><i class="fa-solid fa-circle-plus"></i></a></div>`;
+                          return `<div class="col-sm-12 text-center"><a href="#" class="openDialogAdd" data-id="${row.pasienadmisi_id}" onclick="openDialogAdd(${row.pasienadmisi_id},${row.pendaftaran_id})" style="color:green" data-toggle="tooltip" title="Klik untuk menambahkan keterangan"><i class="fa-solid fa-circle-plus"></i></a></div>`;
                         }else{
                           return '-';
                         }
@@ -426,11 +438,36 @@ $base_url = get_base_url();
             pageLength: 10,
             buttons: [
                 { extend: 'colvis', columns: ':not(.noVis)' },
-                { extend: 'excel', exportOptions: { columns: ':visible' } },
-                { extend: 'csv', exportOptions: { columns: ':visible' } },
-                { extend: 'pdf', exportOptions: { columns: ':visible' } },
+                { 
+                    extend: 'excel', 
+                    text: 'Excel',
+                    exportOptions: { 
+                        columns: ':visible', 
+                        modifier: { search: 'applied', order: 'applied', page: 'all' } // Tanpa pagination
+                    } 
+                },
+                { 
+                    extend: 'csv', 
+                    text: 'CSV',
+                    exportOptions: { 
+                        columns: ':visible', 
+                        modifier: { search: 'applied', order: 'applied', page: 'all' } 
+                    } 
+                },
+                { 
+                    extend: 'pdf', 
+                    text: 'PDF',
+                    exportOptions: { 
+                        columns: ':visible', 
+                        modifier: { search: 'applied', order: 'applied', page: 'all' } 
+                    },
+                    customize: function (doc) {
+                        doc.pageMargins = [20, 20, 20, 20]; // Mengatur margin
+                        doc.defaultStyle.fontSize = 10; // Ukuran font default
+                    }
+                },
                 { extend: 'copy', exportOptions: { columns: ':visible' } },
-                { extend: 'print', exportOptions: { columns: ':visible' } }
+                { extend: 'print', exportOptions: { columns: ':visible',modifier: { search: 'applied', order: 'applied', page: 'all' }  } }
             ],
             initComplete: function () {
                 dataTable.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
@@ -481,12 +518,12 @@ $base_url = get_base_url();
 
     function renderButtons(id) {
       let buttons = '';
-      buttons += `<button type="button" class="btn btn-success btn-sm" onclick="advisKrs(${id});">Masukkan Jam Advis KRS</button>`;
+      buttons += `<button type="button" class="btn btn-success btn-sm" onclick="advisKrs(${id});" data-toggle="tooltip" title="Klik untuk update jam advis krs">Masukkan Jam Advis KRS</button>`;
       return buttons;
     }
     function renderButtonsk(id) {
       let buttons = '';
-      buttons += `<button type="button" class="btn btn-success btn-sm" onclick="skFarmasi(${id});">Masukkan Jam SK Farmasi</button>`;
+      buttons += `<button type="button" class="btn btn-success btn-sm" onclick="skFarmasi(${id});" data-toggle="tooltip" title="Klik untuk update jam sk farmas" >Masukkan Jam SK Farmasi</button>`;
       return buttons;
     }
     function editData(id) {
@@ -632,14 +669,14 @@ $base_url = get_base_url();
       if (!$('script[src="' + select2CDN + '"]').length) {
           $.getScript(select2CDN, function () {
               $("#ruanganSelect").select2({
-                  placeholder: "--Pilih--",
+                  // placeholder: "--Pilih--",
                   allowClear: true,
                   multiple: true // Mengaktifkan multi-select
               });
           });
       } else {
           $("#ruanganSelect").select2({
-              placeholder: "--Pilih--",
+              // placeholder: "--Pilih--",
               allowClear: true,
               multiple: true // Mengaktifkan multi-select
           });
@@ -653,15 +690,29 @@ $base_url = get_base_url();
               
               // console.log("data ", response);
               // Hapus opsi default jika perlu
-              $("#ruanganSelect").html('<option value="">--Pilih--</option>');
-              
+              // $("#ruanganSelect").html('<option value="">--Pilih--</option>');
+              $("#ruanganSelect").html('<option value=""></option>');
+              let selectedValues = [];
+              const instalasi_id = <?php echo $_SESSION['instalasi_id']?> 
+              const ruangan_id = <?php echo $_SESSION['ruangan_id']?> 
+
+              const instalasi_allow = [4,76];
+
               // Looping data dan menambahkan option ke dalam select
               $.each(data, function(index, item) {
                 // console.log("Item ", item);
+
+                if(instalasi_allow.includes(instalasi_id)){
+                  if(ruangan_id == item.ruangan_id){
+                    selectedValues.push(item.ruangan_id); // Tambahkan ke array yang akan dipilih
+                  }
+                }
                   $("#ruanganSelect").append(
                       `<option value="${item.ruangan_id}">${item.ruangan_nama}</option>`
                   );
               });
+            // Setelah semua data ditambahkan, set nilai terpilih
+            $("#ruanganSelect").val(selectedValues).trigger("change");
           })
           .catch(error => {
               console.error("Error fetching data: ", error);
@@ -678,9 +729,16 @@ $base_url = get_base_url();
     let isRangeMode = true; // Default mode adalah range
 
     document.addEventListener("DOMContentLoaded", function () {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+
+      const formattedToday = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+      const formattedYesterday = today.toISOString().split('T')[0];
         flatpickr("#dateRangePicker", {
             mode: "range",
             dateFormat: "Y-m-d", // Format tanggal
+            defaultDate: [formattedYesterday, formattedToday], // Set default range to yesterday and today
             onClose: function(selectedDates, dateStr, instance) {
                 console.log("Selected range:", dateStr);
             }

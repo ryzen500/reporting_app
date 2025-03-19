@@ -28,10 +28,21 @@ class LoadDataKRSBPJS {
             $paramIndex += 3;
         }
         // Tambahkan filter pencarian
-        if (!empty($ruanganSelect) && sizeof($ruanganSelect) == 1 && $ruanganSelect[0] !== "") {
-            $baseQuery .= " AND ruangan_id = $" . $paramIndex;
-            $params[] = $ruanganSelect[0];
-            $paramIndex++;
+        // if (!empty($ruanganSelect) && sizeof($ruanganSelect) >= 1 && $ruanganSelect[0] !== "") {
+        //     $baseQuery .= " AND ruangan_id = $" . $paramIndex;
+        //     $params[] = $ruanganSelect[0];
+        //     $paramIndex++;
+        // }
+        if (!empty($ruanganSelect)  && sizeof($ruanganSelect) >= 1) {
+            $placeholders = [];
+            
+            foreach ($ruanganSelect as $ruangan) {
+                $placeholders[] = "$" . $paramIndex; // Buat placeholder untuk parameter
+                $params[] = $ruangan; // Tanpa wildcard karena pakai IN
+                $paramIndex++;
+            }
+            // Menggunakan IN dengan placeholder yang sesuai
+            $baseQuery .= " AND ruangan_id IN (" . implode(", ", $placeholders) . ")";
         }
 
         if (!empty($no_rekam_medik)) {
@@ -70,6 +81,12 @@ class LoadDataKRSBPJS {
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
                 $params[] = $startDate;
                 $params[] = $endDate;
+                $paramIndex += 2;
+            }else{
+                $startDate = trim($dates[0]);
+                $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                $params[] = $startDate;
+                $params[] = $startDate;
                 $paramIndex += 2;
             }
         }else{
