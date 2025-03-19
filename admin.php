@@ -94,12 +94,12 @@ $base_url = get_base_url();
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
-              <h1>Data Laporan</h1>
+              <h1>Data Laporan Respon Time KRS</h1>
             </div>
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="admin.php">Home</a></li>
-                <li class="breadcrumb-item active">Data Laporan</li>
+                <li class="breadcrumb-item active">Data Laporan Respon Time KRS</li>
               </ol>
             </div>
           </div>
@@ -114,12 +114,12 @@ $base_url = get_base_url();
               <!-- Table -->
               <div class="card">
                 <div class="card-header">
-                  <h3 class="card-title">Data Laporan</h3>
+                  <h3 class="card-title">Data Laporan Respon Time KRS</h3>
                   <div class="card-tools">
                   </div>
                 </div>
                 <div class="card p-3" style="background-color:rgb(255, 255, 255);">
-                  <h3 class="mb-3">Filter Laporan</h3>
+                  <h3 class="mb-3">Filter Laporan Respon Time KRS</h3>
                   <div class="row mb-2">
                       <div class="col-md-3">
                           <label class="form-label">Periode</label>
@@ -417,8 +417,8 @@ $base_url = get_base_url();
                             // result += (item.keterangan || '-') + '<br> ';
                             if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
                               result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
-                              result += ` <a href="#" class="openDialogUpdate" onclick="openDialogUpdate(${item.keteranganrespontime_id})" style="color:black" data-toggle="tooltip" title="Klik untuk merubah keterangan"><i class="fa-solid fa-pencil"></i></a>`;
-                              result += ` <a href="#" class="openDialogDelete" onclick="openDialogDelete(${item.keteranganrespontime_id})" style="color:red" data-toggle="tooltip" title="Klik untuk menghapus keterangan"><i class="fa-regular fa-circle-xmark"></i></a>`;
+                              result += ` <a href="#" class="openDialogUpdate" onclick="openDialogUpdate(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk merubah keterangan"><i class="fa fa-pencil-alt text-primary"></i></a>`;
+                              result += ` <a href="#" class="openDialogDelete" onclick="openDialogDelete(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk menghapus keterangan"><i class="fa fa-trash text-danger"></i></a>`;
                               result +=  ' <br>';
 
                             }else{
@@ -446,41 +446,32 @@ $base_url = get_base_url();
             pageLength: 10,
             buttons: [
                 { extend: 'colvis', columns: ':not(.noVis)' },
-                { 
-                    extend: 'excel', 
-                    text: 'Excel',
-                    exportOptions: { 
-                        columns: ':visible', 
-                        modifier: { search: 'applied', order: 'applied', page: 'all' } // Tanpa pagination
-                    } 
+                {
+                  text: 'Download Excel',
+                  action: function (e, dt, node, config) {
+                    downloadExcel(filters);
+                    // console.log("applyFilter", applyFilter);
+
+                  }
                 },
-                { 
-                    extend: 'csv', 
-                    text: 'CSV',
-                    exportOptions: { 
-                        columns: ':visible', 
-                        modifier: { search: 'applied', order: 'applied', page: 'all' } 
-                    } 
-                },
-                { 
-                    extend: 'pdf', 
-                    text: 'PDF',
-                    exportOptions: { 
-                        columns: ':visible', 
-                        modifier: { search: 'applied', order: 'applied', page: 'all' } 
-                    },
-                    customize: function (doc) {
-                        doc.pageMargins = [20, 20, 20, 20]; // Mengatur margin
-                        doc.defaultStyle.fontSize = 10; // Ukuran font default
-                    }
-                },
-                { extend: 'copy', exportOptions: { columns: ':visible' } },
-                { extend: 'print', exportOptions: { columns: ':visible',modifier: { search: 'applied', order: 'applied', page: 'all' }  } }
+                { extend: 'copy', exportOptions: { columns: ':visible' } }
             ],
+
             initComplete: function () {
                 dataTable.buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
             }
         });
+      // Saat proses loading data dimulai (disable button)
+      $('#example1').on('processing.dt', function (e, settings, processing) {
+          $("#searchBtn1").prop("disabled", processing);
+      });
+
+    }
+    function downloadExcel(filters = {}) {
+      // Construct the query string from filters
+      const params = new URLSearchParams(filters).toString();
+      // Redirect to the backend script with filter parameters
+      window.location.href = `backend/LoadDataFormLaporanExcelKrs.php?action=export_excel&${params}`;
     }
     function simpanKeterangan() {
         let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
@@ -721,7 +712,6 @@ $base_url = get_base_url();
               });
             // Setelah semua data ditambahkan, set nilai terpilih
             $("#ruanganSelect").val(selectedValues).trigger("change");
-     
           })
           .catch(error => {
               console.error("Error fetching data: ", error);
