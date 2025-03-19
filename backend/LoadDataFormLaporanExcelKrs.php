@@ -112,6 +112,9 @@ class LoadDataFormLaporanExcelKrs {
                 case "Advis":
                     $column = "tgl_adviskrs";
                     break;
+                case "Admisi":
+                    $column = "tgladmisi";
+                    break;
             }
         }
         // Jika dateRangePicker diisi, gunakan sebagai filter utama
@@ -358,6 +361,9 @@ class LoadDataFormLaporanExcelKrs {
                     break;
                 case "Advis":
                     $column = "tgl_adviskrs";
+                    break;
+                case "Admisi":
+                    $column = "tgladmisi";
                     break;
             }
         }

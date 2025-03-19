@@ -128,6 +128,7 @@ $base_url = get_base_url();
                             <option value="KRS" selected>Tanggal KRS</option>
                             <option value="Pembayaran">Tanggal Pembayaran</option>
                             <option value="Advis">Tgl Advis KRS</option>
+                            <option value="Admisi">Tanggal Admisi</option>
                           </select>
                       </div>
                       <div class="col-md-3">
@@ -670,14 +671,17 @@ $base_url = get_base_url();
               $("#ruanganSelect").select2({
                   // placeholder: "--Pilih--",
                   allowClear: true,
-                  multiple: true // Mengaktifkan multi-select
+                  multiple: true, // Mengaktifkan multi-select
+                  width: '100%' // Membuat Select2 responsif
               });
           });
       } else {
           $("#ruanganSelect").select2({
               // placeholder: "--Pilih--",
               allowClear: true,
+              width: '100%', // Membuat Select2 responsif
               multiple: true // Mengaktifkan multi-select
+
           });
       }
 
