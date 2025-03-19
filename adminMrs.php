@@ -169,7 +169,7 @@ $base_url = get_base_url();
                         <th>No.</th>
                         <th>Ruangan</th>
                         <th>No. Rekam Medik  / <br> Nama Pasien </th>
-                        <th>Jam Advice KRS</th>
+                        <th>Jam Advice MRS</th>
                         <th>Terbit SPRI</th>
                         <th>Selesai Pendaftaran</th>
                         <th>Jam Timbang Terima</th>
@@ -289,9 +289,19 @@ $base_url = get_base_url();
     // }
 
     function initDataTable(filters = {}) {
+      if(filters.length == 0 ){
+        const filters = {
+        periode: $("#periode").val() || "",
+        nama_pasien: $("#nama_pasien").val() || "",
+        no_rekam_medik: $("#no_rekam_medik").val() || "",
+        ruanganSelect: $("#ruanganSelect").val() || "",
+        dateRangePicker: $("#dateRangePicker").val() || "",
+        sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
+    };
+    }
       if ($.fn.DataTable.isDataTable("#example1")) {
         $('#example1').DataTable().clear().destroy();
-          }
+      }
 
     $("#example1").DataTable({
         serverSide: true,
@@ -322,7 +332,7 @@ $base_url = get_base_url();
                     const ruanganId = "<?php echo $_SESSION['ruangan_id'] ?? ''; ?>";
                     const instalasiId = "<?php echo $_SESSION['instalasi_id'] ?? ''; ?>";
 
-                    if (instalasiId ==  2 || instalasiId == 8 || instalasiId == 3 ||  instalasiId == 73) {
+                    if (instalasiId ==  2  && !data.tgl_advismrs|| instalasiId == 8 && !data.tgl_advismrs || instalasiId == 3 && !data.tgl_advismrs ||  instalasiId == 73 && !data.tgl_advismrs) {
                         return `<button class="btn btn-success btn-sm" 
                                     onclick="handleClickAdvis(${data.pendaftaran_id})" 
                                     data-toggle="tooltip" title="Klik untuk update jam advis mrs">
@@ -338,14 +348,22 @@ $base_url = get_base_url();
                 data: null, 
                 render: data => {
                     const instalasiId = "<?php echo $_SESSION['instalasi_id'] ?? ''; ?>";
-                    if (instalasiId == 4 || instalasiId == 76) {
-                        return `<button class="btn btn-success btn-sm" 
-                                    onclick="handleClick(${data.pendaftaran_id})" 
-                                    data-toggle="tooltip" title="Klik untuk update jam timbang terima">
-                                    <span>Masukkan Jam Timbang Terima</span>
-                                </button>`;
-                    }
-                    return data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : '-';
+
+                    console.log("instalasiId ", instalasiId);
+                    let  displayTanggalTimbang = "";
+                            if (instalasiId == 4 && !data.tgl_timbangterima || instalasiId == 76  && !data.tgl_timbangterima) {
+                          displayTanggalTimbang =  `<button class="btn btn-success btn-sm" 
+                            onclick="handleClick(${data.pendaftaran_id})" 
+                            data-toggle="tooltip" title="Klik untuk update jam timbang terima">
+                            <span>Masukkan Jam Timbang Terima</span>
+                                      </button>`;
+                          }else{
+                            
+                              displayTanggalTimbang =data.tgl_timbangterima ? `${data.tgl_timbangterima} <br> ${data.pegawai_timbangterima}` : '-'; 
+                          
+                            }
+
+                        return  displayTanggalTimbang;
                 }
             },
             { data: null, render: data => `${data.totalWaktu}<br><span style="color:${data.color}">${data.keteranganTotal}</span>` },
@@ -452,7 +470,7 @@ $base_url = get_base_url();
   }
 
   function updateKeterangan() {
-        let keterangan = $("#keterangan").val(); // Ambil nilai dari textarea
+        let keterangan = $("#keteranganMRS").val(); // Ambil nilai dari textarea
         let keteranganrespontime_id = $("#keteranganrespontime_id").val(); // Ambil ID pasien
 
         if (!keterangan.trim()) {
@@ -619,7 +637,7 @@ $base_url = get_base_url();
             success: function (response) {
               Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
               $('#example1').DataTable().clear().destroy();
-              loadData();
+              cari();
             },
             error: function (error) {
               console.error('Error deleting data:', error);
@@ -665,7 +683,7 @@ $base_url = get_base_url();
             success: function (response) {
               Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
               $('#example1').DataTable().clear().destroy();
-              loadData();
+              cari();
             },
             error: function (error) {
               console.error('Error deleting data:', error);
