@@ -91,15 +91,23 @@ class LoadDataMRSBPJS {
                     $params[] = $endDate;
                     $paramIndex += 2;
                 }
+                else{
+                    $startDate = trim($dates[0]);
+                    $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                    $params[] = $startDate. " 00:00:00";
+                    $params[] = $startDate. " 23:59:59";
+                    $paramIndex += 2;
+                }
             } 
             // Jika dateRangePicker kosong tetapi periode diisi, gunakan filter default awal dan akhir bulan
-            else if (!empty($periode)) {
-                $baseQuery .= "AND $column is not null AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = date("Y-m-01"); // Awal bulan
-                $params[] = date("Y-m-t");  // Akhir bulan
+            else{
+                date_default_timezone_set('Asia/Jakarta'); // Pastikan timezone sesuai
+                $tanggalSekarang = date("Y-m-d"); // Format: 2025-03-12 
+                $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
+                $params[] = $tanggalSekarang;
+                $params[] = $tanggalSekarang;
                 $paramIndex += 2;
             }
-
             // var_dump($ruanganSelect);die;
         // Filter berdasarkan ruangan dari input user (jika instalasi_id valid)
     // Filter berdasarkan ruangan dari input user (jika instalasi_id valid)
