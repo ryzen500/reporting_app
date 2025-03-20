@@ -430,38 +430,17 @@ $base_url = get_base_url();
         ],
         pageLength: 10,
         buttons: [
-            { extend: 'colvis', columns: ':not(.noVis)' },
-            { 
-            extend: 'excel', 
-            text: 'Excel',
-            exportOptions: { 
-                columns: ':visible', 
-                modifier: { search: 'applied', order: 'applied', page: 'all' } // Tanpa pagination
-            } 
-        },
-        { 
-            extend: 'csv', 
-            text: 'CSV',
-            exportOptions: { 
-                columns: ':visible', 
-                modifier: { search: 'applied', order: 'applied', page: 'all' } 
-            } 
-        },
-        { 
-            extend: 'pdf', 
-            text: 'PDF',
-            exportOptions: { 
-                columns: ':visible', 
-                modifier: { search: 'applied', order: 'applied', page: 'all' } 
-            },
-            customize: function (doc) {
-                doc.pageMargins = [20, 20, 20, 20]; // Mengatur margin
-                doc.defaultStyle.fontSize = 10; // Ukuran font default
-            }
-        },          
-            { extend: 'copy', exportOptions: { columns: ':visible' } },
-            { extend: 'print', exportOptions: { columns: ':visible' } }
-        ],
+                { extend: 'colvis', columns: ':not(.noVis)' },
+                {
+                  text: 'Download Excel',
+                  action: function (e, dt, node, config) {
+                    downloadExcel(filters);
+                    // console.log("applyFilter", applyFilter);
+
+                  }
+                },
+                { extend: 'copy', exportOptions: { columns: ':visible' } }
+            ],
         initComplete: function () {
             this.api().buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         }
@@ -819,7 +798,12 @@ $base_url = get_base_url();
     });
 
 
-
+    function downloadExcel(filters = {}) {
+      // Construct the query string from filters
+      const params = new URLSearchParams(filters).toString();
+      // Redirect to the backend script with filter parameters
+      window.location.href = `backend/LoadDataFormLaporanExcelMRS.php?action=export_excel&${params}`;
+    }
     
     $(document).on('click', '.deleteKeterangan', function (e) {
         e.preventDefault();
