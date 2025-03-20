@@ -113,13 +113,13 @@ $base_url = get_base_url();
             <div class="col-12">
               <!-- Table -->
               <div class="card">
-                <div class="card-header">
+                <!-- <div class="card-header">
                   <h3 class="card-title">Data Laporan Respon Time KRS</h3>
                   <div class="card-tools">
                   </div>
-                </div>
+                </div> -->
                 <div class="card p-3" style="background-color:rgb(255, 255, 255);">
-                  <h3 class="mb-3">Filter Laporan Respon Time KRS</h3>
+                  <h3 class="mb-3">Filter Laporan</h3>
                   <div class="row mb-2">
                       <div class="col-md-3">
                           <label class="form-label">Periode</label>
