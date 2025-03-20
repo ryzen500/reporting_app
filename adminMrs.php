@@ -65,6 +65,11 @@ $base_url = get_base_url();
     .container {
       padding-top: 50px;
     }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+
+    color: black;
+
+}
   </style>
 </head>
 
@@ -114,19 +119,21 @@ $base_url = get_base_url();
                         <option value="Advis">Tgl Advis MRS</option>
                       </select>
                 </div>
+    
                 <div class="col-md-3">
                     <label class="form-label">Tgl </label>
                     <input type="text" id="dateRangePicker" class="form-control" placeholder="Select Date Range">
 
                 </div>
+    
                 <div class="col-md-6">
                     <label class="form-label">Nama Pasien</label>
                     <input type="text" id="nama_pasien" class="form-control" placeholder="Nama">
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
-                 
-                </div>
+    
             </div>
+            
+            
             <div class="row">
 
                 <div class="col-md-6">
@@ -136,20 +143,23 @@ $base_url = get_base_url();
                         <input class="form-check-input" type="checkbox" id="sudahMRS">
                         <label class="form-check-label" for="sudahMRS">Sudah MRS</label>
                     </div>
-                  </div>
-
-                
-                <div class="col-md-6">
-                    <label class="form-label">Ruangan</label>
-                    <select id="ruanganSelect" class="form-control">
-                        <option></option>
-                    </select>
                 </div>
 
+                
+           
 
-            </div>
+
+                <div class="col-md-6">
+                          <label class="form-label">Ruangan</label>
+                          <select id="ruanganSelect" class="form-control">
+                              <option value="">--Pilih--</option>
+                          </select>
+                </div>
+
+             </div>
         
             <div class="col-md-12 mt-3">
+            
             <button id="searchBtn1" onclick="cari();" class="btn btn-primary">Cari </button>
             <button id="searchBtn2" class="btn btn-secondary">Batal</button>
             </div>
@@ -530,25 +540,33 @@ $base_url = get_base_url();
 }
     function loadDataRuangan(){
 
-    // Tambahkan Select2 CDN
-    const select2CDN = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js";
-    const select2CSS = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css";
-    
-    // Tambahkan CSS Select2 jika belum ada
-    if (!$('link[href="' + select2CSS + '"]').length) {
-        $('head').append(`<link href="${select2CSS}" rel="stylesheet">`);
-    }
-    
-    // // Tambahkan JS Select2 jika belum ada
-    // if (!$('script[src="' + select2CDN + '"]').length) {
-        $.getScript(select2CDN, function () {
-            $("#ruanganSelect").select2({
-        
-                allowClear: true,
-                multiple: true // Mengaktifkan multi-select
-            });
-        });
- 
+      const select2CDN = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js";
+      const select2CSS = "https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css";
+
+      // Tambahkan CSS Select2 jika belum ada
+      if (!$('link[href="' + select2CSS + '"]').length) {
+          $('head').append(`<link href="${select2CSS}" rel="stylesheet">`);
+      }
+
+      // Tambahkan JS Select2 jika belum ada
+      if (!$('script[src="' + select2CDN + '"]').length) {
+          $.getScript(select2CDN, function () {
+              $("#ruanganSelect").select2({
+                  // placeholder: "--Pilih--",
+                  allowClear: true,
+                  multiple: true, // Mengaktifkan multi-select
+                  width: '100%' // Membuat Select2 responsif
+              });
+          });
+      } else {
+          $("#ruanganSelect").select2({
+              // placeholder: "--Pilih--",
+              allowClear: true,
+              width: '100%', // Membuat Select2 responsif
+              multiple: true // Mengaktifkan multi-select
+
+          });
+      }
     
     const URL_API = "backend/LoadRuangan.php";
     
