@@ -10,7 +10,7 @@ class LoadDataMRSBPJS {
     }
 
     
-    public function getData($draw, $limit, $offset, $searchValue, $no_rekam_medik = null, $nama_pasien = null, $periode = null, $ruanganSelect = [], $dateRangePicker = null, $session_instalasi_id, $session_ruangan_id,$sudahMRS) {
+    public function getData($draw, $limit, $offset, $searchValue, $no_rekam_medik = null, $nama_pasien = null, $periode = null, $ruanganSelect = [], $dateRangePicker = null, $session_instalasi_id, $session_ruangan_id,$sudahMRS, $no_pendaftaran) {
         $baseQuery = " FROM laporanmrsri_v WHERE 1=1 ";
         $params = [];
         $paramIndex = 1;
@@ -58,6 +58,12 @@ class LoadDataMRSBPJS {
             $params[] = "%".$nama_pasien."%";
             $paramIndex++;
         }
+        // Filter berdasarkan nama_pasien
+        if (!empty($no_pendaftaran)) {
+            $baseQuery .= " AND no_pendaftaran ILIKE $" . $paramIndex;
+            $params[] = "%".$no_pendaftaran."%";
+            $paramIndex++;
+        }
 
         
                 // Pilih kolom tanggal berdasarkan periode yang dipilih
@@ -87,8 +93,8 @@ class LoadDataMRSBPJS {
                     $endDate = trim($dates[1]);
 
                     $baseQuery .= "AND $column is not null  AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                    $params[] = $startDate;
-                    $params[] = $endDate;
+                    $params[] = $startDate. " 00:00:00";
+                    $params[] = $endDate. " 23:59:59";
                     $paramIndex += 2;
                 }
                 else{
@@ -104,8 +110,8 @@ class LoadDataMRSBPJS {
                 date_default_timezone_set('Asia/Jakarta'); // Pastikan timezone sesuai
                 $tanggalSekarang = date("Y-m-d"); // Format: 2025-03-12 
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = $tanggalSekarang;
-                $params[] = $tanggalSekarang;
+                $params[] = $tanggalSekarang. " 00:00:00";
+                $params[] = $tanggalSekarang. " 23:59:59";
                 $paramIndex += 2;
             }
             // var_dump($ruanganSelect);die;
@@ -131,9 +137,8 @@ class LoadDataMRSBPJS {
 
         // var_dump($sudahMRS );die;
         // Hitung total data sebelum filtering
-        $countTotalQuery = "SELECT COUNT(*) FROM laporanmrsri_v";
-        $totalRecords = pg_fetch_result(pg_query($this->conn, $countTotalQuery), 0, 0);
-
+        $countTotalQuery = "SELECT COUNT(*)" . $baseQuery;
+        $totalRecords = pg_fetch_result(pg_query_params($this->conn, $countTotalQuery, $params), 0, 0);
         // Hitung total data setelah filtering
         $countFilteredQuery = "SELECT COUNT(*)" . $baseQuery;
         $totalFiltered = pg_fetch_result(pg_query_params($this->conn, $countFilteredQuery, $params), 0, 0);
@@ -167,18 +172,18 @@ class LoadDataMRSBPJS {
                 $diff = $tgl_timbangterima->diff($tgl_advismrs);
                 $menit = ($diff->h * 60)+$diff->i;
                 $totalWaktu = "{$diff->days} hari, {$diff->h} jam, {$diff->i} menit";
-                if($diff->days>0){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
-                }else if($menit>90){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
+                if($tgl_timbangterima > $tgl_advismrs){
+                    if($menit>90){
+                        $color='red';
+                        $keterangan='Lebih dari 90 menit';
+    
+                    }else{
+                        $color='green';
+                        $keterangan='Kurang dari 90 menit';
+                    }
                 }else{
-                    $color='green';
-                    $keterangan='Kurang dari 90 menit';
-
+                    $color='red';
+                    $keterangan='Lebih dari 90 menit (Jam Advis MRS lebih besar dari jam timbang terima)';
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
@@ -247,6 +252,7 @@ $periode = isset($_GET['periode']) ? $_GET['periode'] : "";
 $dateRangePicker = isset($_GET['dateRangePicker']) ? $_GET['dateRangePicker'] : "";
 $nama_pasien = isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "";
 $ruanganSelect = isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : "";
+$no_pendaftaran = isset($_GET['no_pendaftaran']) ? $_GET['no_pendaftaran'] : "";
 $sudahMRS = !empty($_GET['sudahMRS']) ? $_GET['sudahMRS'] : false;
 // Ambil instalasi_id dan ruangan_id dari session
 $session_instalasi_id = !empty( $_SESSION['instalasi_id']) ?  $_SESSION['instalasi_id'] : null;
@@ -262,7 +268,7 @@ if ($session_instalasi_id === null || $session_ruangan_id === null) {
 }
 
 $loadData = new LoadDataMRSBPJS($conn);
-$data = $loadData->getData($draw, $limit, $offset, $searchValue, $no_rekam_medik, $nama_pasien, $periode, $ruanganSelect, $dateRangePicker, $session_instalasi_id, $session_ruangan_id,$sudahMRS);
+$data = $loadData->getData($draw, $limit, $offset, $searchValue, $no_rekam_medik, $nama_pasien, $periode, $ruanganSelect, $dateRangePicker, $session_instalasi_id, $session_ruangan_id,$sudahMRS, $no_pendaftaran);
 
 header('Content-Type: application/json');
 echo json_encode($data);

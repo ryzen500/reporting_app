@@ -143,9 +143,14 @@ $base_url = get_base_url();
                   </div>
                   <div class="row">
 
-                      <div class="col-md-6">
+                      <div class="col-md-3">
                           <label class="form-label">No RM</label>
                           <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
+                      </div>
+                      
+                      <div class="col-md-3">
+                        <label class="form-label">No Pendaftaran</label>
+                        <input type="text" id="no_pendaftaran" class="form-control" placeholder="No Pendaftaran">
                       </div>
 
                       <div class="col-md-6">
@@ -180,7 +185,7 @@ $base_url = get_base_url();
                       <tr>
                         <th>No.</th>
                         <th>Ruangan</th>
-                        <th>No. Rekam Medik / Nama</th>
+                        <th>No. Rekam Medik  / <br> Nama Pasien  / <br> No Pendaftaran </th>
                         <th>Advis KRS</th>
                         <th>SK Ke Farmasi</th>
                         <th>SK Ke Farmasi Selesai</th>
@@ -269,6 +274,7 @@ $base_url = get_base_url();
             ruanganSelect: $("#ruanganSelect").val() || "",
             pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
             sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
+            no_pendaftaran: $("#no_pendaftaran").val() || "",        
             dateRangePicker: $("#dateRangePicker").val() || ""
         };
         if ($.fn.DataTable.isDataTable("#example1")) {
@@ -304,6 +310,7 @@ $base_url = get_base_url();
                           ruanganSelect: $("#ruanganSelect").val() || "",
                           pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
                           sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
+                          no_pendaftaran: $("#no_pendaftaran").val() || "",        
                           dateRangePicker: $("#dateRangePicker").val() || ""
                       };
                       filters=filters_temp;
@@ -328,14 +335,7 @@ $base_url = get_base_url();
                     }
                 },
                 { data: 'ruangan_nama' },
-                {
-                  data: null, render: function (data, type, row) {
-                    const no_rekam_medik = row.no_rekam_medik;
-                    const nama_pasien = (row.nama_pasien === '') ? '-' : row.nama_pasien;
-                    return `${no_rekam_medik} / ${nama_pasien}`;
-                    // return renderButtons(row.id, sessionData);
-                  }
-                },
+                { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien} / <br> ${data.no_pendaftaran}` || '-' },
                 {
                     data: null,
                     render: function (data,type,row) {

@@ -136,7 +136,7 @@ $base_url = get_base_url();
             
             <div class="row">
 
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <label class="form-label">No RM</label>
                     <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
                     <div class="form-check">
@@ -145,7 +145,10 @@ $base_url = get_base_url();
                     </div>
                 </div>
 
-                
+                <div class="col-md-3">
+                    <label class="form-label">No Pendaftaran</label>
+                    <input type="text" id="no_pendaftaran" class="form-control" placeholder="No Pendaftaran">
+                </div>
            
 
 
@@ -178,7 +181,7 @@ $base_url = get_base_url();
                       <tr>
                         <th>No.</th>
                         <th>Ruangan</th>
-                        <th>No. Rekam Medik  / <br> Nama Pasien </th>
+                        <th>No. Rekam Medik  / <br> Nama Pasien  / <br> No Pendaftaran </th>
                         <th>Jam Advice MRS</th>
                         <th>Terbit SPRI</th>
                         <th>Selesai Pendaftaran</th>
@@ -256,7 +259,7 @@ $base_url = get_base_url();
         </div>
       </section>
     </div>
-    <?php include 'footer.php'; ?>
+    <?php //include 'footer.php'; ?>
   </div>
 
   <!-- External Scripts -->
@@ -301,14 +304,15 @@ $base_url = get_base_url();
     function initDataTable(filters = {}) {
       if(filters.length == 0 ){
         const filters = {
-        periode: $("#periode").val() || "",
-        nama_pasien: $("#nama_pasien").val() || "",
-        no_rekam_medik: $("#no_rekam_medik").val() || "",
-        ruanganSelect: $("#ruanganSelect").val() || "",
-        dateRangePicker: $("#dateRangePicker").val() || "",
-        sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
-    };
-    }
+          periode: $("#periode").val() || "",
+          nama_pasien: $("#nama_pasien").val() || "",
+          no_rekam_medik: $("#no_rekam_medik").val() || "",
+          ruanganSelect: $("#ruanganSelect").val() || "",
+          dateRangePicker: $("#dateRangePicker").val() || "",
+          no_pendaftaran: $("#no_pendaftaran").val() || "",
+          sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
+        };
+      }
       if ($.fn.DataTable.isDataTable("#example1")) {
         $('#example1').DataTable().clear().destroy();
       }
@@ -335,7 +339,7 @@ $base_url = get_base_url();
         columns: [
             { data: null, render: (data, type, row, meta) => meta.row + meta.settings._iDisplayStart + 1 },
             { data: 'ruangan_nama' },
-            { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien}` || '-' },
+            { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien} / <br> ${data.no_pendaftaran}` || '-' },
             { 
                 data: null, 
                 render: data => {
@@ -455,7 +459,9 @@ $base_url = get_base_url();
             this.api().buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         }
     });
-
+    $('#example1').on('processing.dt', function (e, settings, processing) {
+          $("#searchBtn1").prop("disabled", processing);
+      });
   }
 
   function updateKeterangan() {
@@ -534,6 +540,7 @@ $base_url = get_base_url();
         no_rekam_medik: $("#no_rekam_medik").val() || "",
         ruanganSelect: $("#ruanganSelect").val() || "",
         dateRangePicker: $("#dateRangePicker").val() || "",
+        no_pendaftaran: $("#no_pendaftaran").val() || "",        
         sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
     };
     initDataTable(filters);
