@@ -429,12 +429,13 @@ $base_url = get_base_url();
 
                             }
                         });
-
-                        result += `<div class="col-sm-12 text-center"> 
-                                <a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
-                                    <i class="fa fa-plus-circle text-success"></i> 
-                                </a></div>`;
-                        return  isAllowed ? result : '<div class="col-sm-12 text-center"> - </div>' ; // Menghapus koma dan spasi terakhir    
+                        if(isAllowed){
+                          result += `<div class="col-sm-12 text-center"> 
+                                  <a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
+                                      <i class="fa fa-plus-circle text-success"></i> 
+                                  </a></div>`;
+                        }
+                        return result; // Menghapus koma dan spasi terakhir    
                         // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
 
                       } else {
