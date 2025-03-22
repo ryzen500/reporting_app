@@ -425,7 +425,7 @@ $base_url = get_base_url();
                             }else{
 
                               
-                              result += `<b>${item.ruangan_nama}  (${nama_pegawai})</b>` +' : '+ item.keterangan+ ' <br>';
+                              result += `<b>${item.ruangan_nama}  (${nama_pegawai})</b>` +' : <br>'+ item.keterangan+ ' <br>';
 
                             }
                         });
