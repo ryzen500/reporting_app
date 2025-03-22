@@ -415,15 +415,21 @@ $base_url = get_base_url();
                       if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
                         let result = ''; // Variabel untuk menyimpan hasil looping
                         row.loopKeterangan.forEach(item => {
+                          let nama_pegawai = '';
+                            if(item.update_loginpemakai_id != null && (item.update_loginpemakai_id != '') ){
+                              nama_pegawai = item.nama_update +' / '+item.update_time ;
+                            }else{
+                              nama_pegawai = item.nama_create +' / '+item.create_time ;
+                            }
                             // result += (item.keterangan || '-') + '<br> ';
                             if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
-                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama} (${nama_pegawai})</b>` +' : <br>'+ item.keterangan;
                               result += ` <a href="#" class="openDialogUpdate" onclick="openDialogUpdate(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk merubah keterangan"><i class="fa fa-pencil-alt text-primary"></i></a>`;
                               result += ` <a href="#" class="openDialogDelete" onclick="openDialogDelete(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk menghapus keterangan"><i class="fa fa-trash text-danger"></i></a>`;
                               result +=  ' <br>';
 
                             }else{
-                              result +=`<b>${item.ruangan_nama}</b>`  +' : '+ item.keterangan+ ' <br>';
+                              result +=`<b>${item.ruangan_nama} (${nama_pegawai})</b>`  +' : <br>'+ item.keterangan+ ' <br>';
                             }
                         });
 

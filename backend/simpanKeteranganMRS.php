@@ -21,7 +21,7 @@ $pendaftaran_id = intval($_POST['pendaftaran_id']);
 $ruangan_id = $_SESSION['ruangan_id'];
 $jenis = trim("Respon Time MRS");
 $keterangan = trim($_POST['keterangan']);
-$create_loginpemakai_id = $_SESSION['pegawai_id'] ?? 0; // ID pengguna dari session
+$create_loginpemakai_id = $_SESSION['loginpemakai_id'] ; // ID pengguna dari session
 $create_ruangan = $_SESSION['ruangan_id'] ?? null; // ID ruangan dari session (opsional)
 date_default_timezone_set('Asia/Jakarta');
 $create_time = date("Y-m-d H:i:s");
