@@ -280,8 +280,14 @@ class LoadDataFormLaporanExcelKrs {
 
             if (sizeof($row['loopKeterangan'])>0) {
                 foreach ($row['loopKeterangan'] as $ket_row) {
+                    $nama_pegawai = '';
+                    if($ket_row['update_loginpemakai_id'] != null && ($ket_row['update_loginpemakai_id'] != '') ){
+                        $nama_pegawai = $ket_row['nama_update'] . ' / '. $ket_row['update_time'];
+                    }else{
+                        $nama_pegawai = $ket_row['nama_create']. ' / '. $ket_row['create_time'];
+                    }
                     // Buat teks bold untuk ruangan_nama
-                    $textBold = $richTextKet->createTextRun($ket_row['ruangan_nama'] . ' : ');
+                    $textBold = $richTextKet->createTextRun($ket_row['ruangan_nama'] .' ( '.$nama_pegawai. ' ) : ');
                     $textBold->getFont()->setBold(true); // Jadikan bold
 
                     // Tambahkan keterangan setelahnya
@@ -442,9 +448,27 @@ class LoadDataFormLaporanExcelKrs {
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT r.ruangan_nama, t.* 
+            $baseQuery1 = "SELECT 
+            r.ruangan_nama, 
+            CONCAT(
+                COALESCE(p.gelardepan, ''), ' ',
+                p.nama_pegawai, ' ',
+                COALESCE(g.gelarbelakang_nama, '')
+            ) AS nama_create,
+            CONCAT(
+                COALESCE(pu.gelardepan, ''), ' ',
+                pu.nama_pegawai, ' ',
+                COALESCE(gu.gelarbelakang_nama, '')
+            ) AS nama_update,
+            t.* 
             FROM keteranganrespontime_t t  
             JOIN ruangan_m r ON t.ruangan_id = r.ruangan_id 
+            join loginpemakai_k lp on t.create_loginpemakai_id = lp.loginpemakai_id
+            join pegawai_m p on lp.pegawai_id = p.pegawai_id
+            left join gelarbelakang_m g on g.gelarbelakang_id = p.gelarbelakang_id
+            left join loginpemakai_k lpu on t.update_loginpemakai_id = lpu.loginpemakai_id
+            left join pegawai_m pu on lpu.pegawai_id = pu.pegawai_id
+            left join gelarbelakang_m gu on gu.gelarbelakang_id = pu.gelarbelakang_id
             WHERE t.pendaftaran_id = $1 
             AND (is_deleted = $2 OR is_deleted IS NULL)
             AND jenis = $3

@@ -404,11 +404,16 @@ $base_url = get_base_url();
                             // result += (item.keterangan || '-') + '<br> ';
                             console.log("Item Ruangan ",  <?php echo $_SESSION['ruangan_id']?>);
                             console.log("Item Ruangan ",  parseInt(item.ruangan_id) );
-
+                            let nama_pegawai = '';
+                            if(item.update_loginpemakai_id != null && (item.update_loginpemakai_id != '') ){
+                              nama_pegawai = item.nama_update +' / '+item.update_time ;
+                            }else{
+                              nama_pegawai = item.nama_create +' / '+item.create_time ;
+                            }
                             if(parseInt(item.ruangan_id) == <?php echo $_SESSION['ruangan_id']?>){
                               console.log("Kick Ruangan");
 
-                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama}  (${nama_pegawai} )</b>` +' : <br>'+ item.keterangan;
                               result += `  <a href="#" class="editKeterangan" data-id="${item.keteranganrespontime_id}" data-toggle="tooltip" title="Klik untuk merubah keterangan">
                                         <i class="fa fa-pencil-alt text-primary"></i>
                                     </a>`;
@@ -420,7 +425,7 @@ $base_url = get_base_url();
                             }else{
 
                               
-                              result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
+                              result += `<b>${item.ruangan_nama}  (${nama_pegawai})</b>` +' : '+ item.keterangan+ ' <br>';
 
                             }
                         });
