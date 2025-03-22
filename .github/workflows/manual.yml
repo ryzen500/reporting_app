@@ -1,0 +1,44 @@
+name: Git Flow for Reporting App
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  git-flow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get Current Date
+        id: date
+        run: echo "DATE=$(date +'%Y_%m_%d')" >> $GITHUB_ENV
+
+      - name: Set Branch Name
+        id: branch_name
+        run: |
+          BRANCH_NAME="update_pull_${{ env.DATE }}_001_proses_pembuatan_branch_dihari_ini"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Create New Branch
+        run: |
+          git checkout -b ${{ env.BRANCH_NAME }}
+          git stash
+
+      - name: Pull Latest Code
+        run: |
+          git pull origin main
+
+      - name: Apply Latest Stash
+        run: |
+          STASH_INDEX=$(git stash list | head -n 1 | awk -F: '{print $1}')
+          if [ -n "$STASH_INDEX" ]; then
+            git stash apply "$STASH_INDEX"
+          else
+            echo "No stash found, skipping apply."
+          fi
+
+      - name: Push New Branch
+        run: |
+          git push origin ${{ env.BRANCH_NAME }}
