@@ -348,7 +348,7 @@ $base_url = get_base_url();
 
                     if (instalasiId ==  2  && !data.tgl_advismrs|| instalasiId == 8 && !data.tgl_advismrs || instalasiId == 3 && !data.tgl_advismrs ||  instalasiId == 73 && !data.tgl_advismrs) {
                         return `<button class="btn btn-success btn-sm" 
-                                    onclick="handleClickAdvis(${data.pendaftaran_id})" 
+                                    onclick="handleClickAdvis(${data.pendaftaran_id},'${data.tgl_suratperintahranap}')" 
                                     data-toggle="tooltip" title="Klik untuk update jam advis mrs">
                                     <span>Masukkan Jam Advis MRS</span>
                                 </button>`;
@@ -670,7 +670,7 @@ $base_url = get_base_url();
     }
 
 
-    function handleClickAdvis(pendaftaran_id, tgl_advismrs) {
+    function handleClickAdvis(pendaftaran_id, tgl_suratperintahranap) {
       Swal.fire({
       title: "Apakah anda yakin ?",
       text: "Anda yakin untuk menginput data ?",
@@ -696,11 +696,10 @@ $base_url = get_base_url();
 
       let pegawai_advismrs = '<?php echo  $_SESSION['nama_pegawai']; ?>';
       tgl_advismrs = formattedDateTime;
-
         $.ajax({
             url: 'backend/UpdateDataMRSAdvis.php',
             type: 'POST',
-            data: { pendaftaran_id: pendaftaran_id, tgl_advismrs : tgl_advismrs , pegawai_advismrs : pegawai_advismrs },
+            data: { pendaftaran_id: pendaftaran_id, tgl_advismrs : tgl_advismrs , pegawai_advismrs : pegawai_advismrs, tgl_suratperintahranap:tgl_suratperintahranap },
             success: function (response) {
               Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
               $('#example1').DataTable().clear().destroy();
