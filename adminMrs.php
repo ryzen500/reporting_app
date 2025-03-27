@@ -136,7 +136,7 @@ $base_url = get_base_url();
             
             <div class="row">
 
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <label class="form-label">No RM</label>
                     <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
                     <div class="form-check">
@@ -145,7 +145,10 @@ $base_url = get_base_url();
                     </div>
                 </div>
 
-                
+                <div class="col-md-3">
+                    <label class="form-label">No Pendaftaran</label>
+                    <input type="text" id="no_pendaftaran" class="form-control" placeholder="No Pendaftaran">
+                </div>
            
 
 
@@ -178,7 +181,7 @@ $base_url = get_base_url();
                       <tr>
                         <th>No.</th>
                         <th>Ruangan</th>
-                        <th>No. Rekam Medik  / <br> Nama Pasien </th>
+                        <th>No. Rekam Medik  / <br> Nama Pasien  / <br> No Pendaftaran </th>
                         <th>Jam Advice MRS</th>
                         <th>Terbit SPRI</th>
                         <th>Selesai Pendaftaran</th>
@@ -256,7 +259,7 @@ $base_url = get_base_url();
         </div>
       </section>
     </div>
-    <?php include 'footer.php'; ?>
+    <?php //include 'footer.php'; ?>
   </div>
 
   <!-- External Scripts -->
@@ -301,14 +304,15 @@ $base_url = get_base_url();
     function initDataTable(filters = {}) {
       if(filters.length == 0 ){
         const filters = {
-        periode: $("#periode").val() || "",
-        nama_pasien: $("#nama_pasien").val() || "",
-        no_rekam_medik: $("#no_rekam_medik").val() || "",
-        ruanganSelect: $("#ruanganSelect").val() || "",
-        dateRangePicker: $("#dateRangePicker").val() || "",
-        sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
-    };
-    }
+          periode: $("#periode").val() || "",
+          nama_pasien: $("#nama_pasien").val() || "",
+          no_rekam_medik: $("#no_rekam_medik").val() || "",
+          ruanganSelect: $("#ruanganSelect").val() || "",
+          dateRangePicker: $("#dateRangePicker").val() || "",
+          no_pendaftaran: $("#no_pendaftaran").val() || "",
+          sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
+        };
+      }
       if ($.fn.DataTable.isDataTable("#example1")) {
         $('#example1').DataTable().clear().destroy();
       }
@@ -335,7 +339,7 @@ $base_url = get_base_url();
         columns: [
             { data: null, render: (data, type, row, meta) => meta.row + meta.settings._iDisplayStart + 1 },
             { data: 'ruangan_nama' },
-            { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien}` || '-' },
+            { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien} / <br> ${data.no_pendaftaran}` || '-' },
             { 
                 data: null, 
                 render: data => {
@@ -344,7 +348,7 @@ $base_url = get_base_url();
 
                     if (instalasiId ==  2  && !data.tgl_advismrs|| instalasiId == 8 && !data.tgl_advismrs || instalasiId == 3 && !data.tgl_advismrs ||  instalasiId == 73 && !data.tgl_advismrs) {
                         return `<button class="btn btn-success btn-sm" 
-                                    onclick="handleClickAdvis(${data.pendaftaran_id})" 
+                                    onclick="handleClickAdvis(${data.pendaftaran_id},'${data.tgl_suratperintahranap}')" 
                                     data-toggle="tooltip" title="Klik untuk update jam advis mrs">
                                     <span>Masukkan Jam Advis MRS</span>
                                 </button>`;
@@ -400,11 +404,16 @@ $base_url = get_base_url();
                             // result += (item.keterangan || '-') + '<br> ';
                             console.log("Item Ruangan ",  <?php echo $_SESSION['ruangan_id']?>);
                             console.log("Item Ruangan ",  parseInt(item.ruangan_id) );
-
+                            let nama_pegawai = '';
+                            if(item.update_loginpemakai_id != null && (item.update_loginpemakai_id != '') ){
+                              nama_pegawai = item.nama_update +' / '+item.update_time ;
+                            }else{
+                              nama_pegawai = item.nama_create +' / '+item.create_time ;
+                            }
                             if(parseInt(item.ruangan_id) == <?php echo $_SESSION['ruangan_id']?>){
                               console.log("Kick Ruangan");
 
-                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama}  (${nama_pegawai} )</b>` +' : <br>'+ item.keterangan;
                               result += `  <a href="#" class="editKeterangan" data-id="${item.keteranganrespontime_id}" data-toggle="tooltip" title="Klik untuk merubah keterangan">
                                         <i class="fa fa-pencil-alt text-primary"></i>
                                     </a>`;
@@ -416,16 +425,17 @@ $base_url = get_base_url();
                             }else{
 
                               
-                              result += item.ruangan_nama +' : '+ item.keterangan+ ' <br>';
+                              result += `<b>${item.ruangan_nama}  (${nama_pegawai})</b>` +' : <br>'+ item.keterangan+ ' <br>';
 
                             }
                         });
-
-                        result += `<div class="col-sm-12 text-center"> 
-                                <a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
-                                    <i class="fa fa-plus-circle text-success"></i> 
-                                </a></div>`;
-                        return  isAllowed ? result : '<div class="col-sm-12 text-center"> - </div>' ; // Menghapus koma dan spasi terakhir    
+                        if(isAllowed){
+                          result += `<div class="col-sm-12 text-center"> 
+                                  <a href="#" class="openDialogAdd" style="text-align:center" data-id="${row.pendaftaran_id}" data-toggle="tooltip" title="Klik untuk menambahkan keterangan">
+                                      <i class="fa fa-plus-circle text-success"></i> 
+                                  </a></div>`;
+                        }
+                        return result; // Menghapus koma dan spasi terakhir    
                         // return `<a href="#" class="openDialog" data-id="${row.pasienadmisi_id}">Tambah Keterangan</a>`;
 
                       } else {
@@ -455,7 +465,9 @@ $base_url = get_base_url();
             this.api().buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         }
     });
-
+    $('#example1').on('processing.dt', function (e, settings, processing) {
+          $("#searchBtn1").prop("disabled", processing);
+      });
   }
 
   function updateKeterangan() {
@@ -534,6 +546,7 @@ $base_url = get_base_url();
         no_rekam_medik: $("#no_rekam_medik").val() || "",
         ruanganSelect: $("#ruanganSelect").val() || "",
         dateRangePicker: $("#dateRangePicker").val() || "",
+        no_pendaftaran: $("#no_pendaftaran").val() || "",        
         sudahMRS: $("#sudahMRS").prop("checked") ? true : false // Cek checkbox
     };
     initDataTable(filters);
@@ -658,7 +671,7 @@ $base_url = get_base_url();
     }
 
 
-    function handleClickAdvis(pendaftaran_id, tgl_advismrs) {
+    function handleClickAdvis(pendaftaran_id, tgl_suratperintahranap) {
       Swal.fire({
       title: "Apakah anda yakin ?",
       text: "Anda yakin untuk menginput data ?",
@@ -684,11 +697,10 @@ $base_url = get_base_url();
 
       let pegawai_advismrs = '<?php echo  $_SESSION['nama_pegawai']; ?>';
       tgl_advismrs = formattedDateTime;
-
         $.ajax({
             url: 'backend/UpdateDataMRSAdvis.php',
             type: 'POST',
-            data: { pendaftaran_id: pendaftaran_id, tgl_advismrs : tgl_advismrs , pegawai_advismrs : pegawai_advismrs },
+            data: { pendaftaran_id: pendaftaran_id, tgl_advismrs : tgl_advismrs , pegawai_advismrs : pegawai_advismrs, tgl_suratperintahranap:tgl_suratperintahranap },
             success: function (response) {
               Swal.fire('Berhasil Update!', 'Data berhasil disimpan.', 'success');
               $('#example1').DataTable().clear().destroy();

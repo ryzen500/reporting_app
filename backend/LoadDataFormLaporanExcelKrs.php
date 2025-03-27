@@ -23,6 +23,7 @@ class LoadDataFormLaporanExcelKrs {
     private $pasienBpjs;
     private $sudahKRS;
     private $ruanganSelect;
+    private $no_pendaftaran;
 
     public function __construct($conn, $limit = 10, $offset = 0, $filters = []) {
         $this->conn = $conn;
@@ -34,6 +35,7 @@ class LoadDataFormLaporanExcelKrs {
         $this->no_rekam_medik = $filters['no_rekam_medik'] ?? '';
         $this->pasienBpjs = $filters['pasienBpjs'] ?? '';
         $this->sudahKRS = $filters['sudahKRS'] ?? '';
+        $this->no_pendaftaran = $filters['no_pendaftaran'] ?? '';        
         $this->ruanganSelect = (!empty($filters['ruanganSelect'])) ?  explode(",", $filters['ruanganSelect']):'';
     }
 
@@ -230,7 +232,7 @@ class LoadDataFormLaporanExcelKrs {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         // Header kolom
-        $headers = ["No", "Ruangan", "No Rekam Medik / Nama", "Advis MRS", "Terbit SPRI", "Selesai Pendaftaran ", "Jam Timbang Terima", "Total Waktu", "Keterangan"];
+        $headers = ["No", "Ruangan", "No Rekam Medik / Nama / No. Pendaftaran", "Advis KRS", "SK Ke Farmasi", "SK Ke Farmasi Selesai", "Entry Resep", "Jam Pembayaran", "Jam Pasien Pulang", "Total Waktu", "Keterangan"];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Tambahkan data
@@ -286,8 +288,14 @@ class LoadDataFormLaporanExcelKrs {
 
             if (sizeof($row['loopKeterangan'])>0) {
                 foreach ($row['loopKeterangan'] as $ket_row) {
+                    $nama_pegawai = '';
+                    if($ket_row['update_loginpemakai_id'] != null && ($ket_row['update_loginpemakai_id'] != '') ){
+                        $nama_pegawai = $ket_row['nama_update'] . ' / '. $ket_row['update_time'];
+                    }else{
+                        $nama_pegawai = $ket_row['nama_create']. ' / '. $ket_row['create_time'];
+                    }
                     // Buat teks bold untuk ruangan_nama
-                    $textBold = $richTextKet->createTextRun($ket_row['ruangan_nama'] . ' : ');
+                    $textBold = $richTextKet->createTextRun($ket_row['ruangan_nama'] .' ( '.$nama_pegawai. ' ) : ');
                     $textBold->getFont()->setBold(true); // Jadikan bold
 
                     // Tambahkan keterangan setelahnya
@@ -357,6 +365,12 @@ class LoadDataFormLaporanExcelKrs {
             $params[] = "%".$this->nama_pasien."%";
             $paramIndex++;
         }
+        if (!empty($this->no_pendaftaran)) {
+            $baseQuery .= " AND no_pendaftaran ILIKE $" . $paramIndex;
+            $params[] = "%".$this->no_pendaftaran."%";
+            $paramIndex++;
+        }
+        
         // Pilih kolom tanggal berdasarkan periode yang dipilih
         $column = "tglpulang"; // Default
         if (!empty($this->periode)) {
@@ -384,8 +398,8 @@ class LoadDataFormLaporanExcelKrs {
                 $endDate = trim($dates[1]);
 
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = $startDate;
-                $params[] = $endDate;
+                $params[] = $startDate. " 00:00:00";
+                $params[] = $endDate. " 23:59:59";
                 $paramIndex += 2;
             }else{
                 $startDate = trim($dates[0]);
@@ -398,8 +412,8 @@ class LoadDataFormLaporanExcelKrs {
             date_default_timezone_set('Asia/Jakarta'); // Pastikan timezone sesuai
             $tanggalSekarang = date("Y-m-d"); // Format: 2025-03-12 
             $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-            $params[] = $tanggalSekarang;
-            $params[] = $tanggalSekarang;
+            $params[] = $tanggalSekarang. " 00:00:00";
+            $params[] = $tanggalSekarang. " 23:59:59";
             $paramIndex += 2;
         }
         if($this->sudahKRS==1){          
@@ -407,7 +421,7 @@ class LoadDataFormLaporanExcelKrs {
             // $params[] = "%".$sudahKRS."%";
             // $paramIndex++;
         }
-        $query = "SELECT *" . $baseQuery;
+        $query = "SELECT *" . $baseQuery ." ORDER BY pendaftaran_id DESC ";
         $result = pg_query_params($this->conn, $query, $params);
         if (!$result) {
             echo json_encode(["error" => pg_last_error($this->conn)]);
@@ -427,24 +441,42 @@ class LoadDataFormLaporanExcelKrs {
                 $diff = $tglpulang->diff($tgl_adviskrs);
                 $menit = ($diff->h * 60)+$diff->i;
                 $totalWaktu = "{$diff->days} hari, {$diff->h} jam, {$diff->i} menit";
-                if($diff->days>0){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
-                }else if($menit>90){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
+                if($tglpulang > $tgl_adviskrs){
+                    if($menit>90){
+                        $color='red';
+                        $keterangan='Lebih dari 90 menit';
+    
+                    }else{
+                        $color='green';
+                        $keterangan='Kurang dari 90 menit';
+                    }
                 }else{
-                    $color='green';
-                    $keterangan='Kurang dari 90 menit';
-
+                    $color='red';
+                    $keterangan='Lebih dari 90 menit (Jam Advis KRS lebih besar dari jam pasien pulang)';
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT r.ruangan_nama, t.* 
+            $baseQuery1 = "SELECT 
+            r.ruangan_nama, 
+            CONCAT(
+                COALESCE(p.gelardepan, ''), ' ',
+                p.nama_pegawai, ' ',
+                COALESCE(g.gelarbelakang_nama, '')
+            ) AS nama_create,
+            CONCAT(
+                COALESCE(pu.gelardepan, ''), ' ',
+                pu.nama_pegawai, ' ',
+                COALESCE(gu.gelarbelakang_nama, '')
+            ) AS nama_update,
+            t.* 
             FROM keteranganrespontime_t t  
             JOIN ruangan_m r ON t.ruangan_id = r.ruangan_id 
+            join loginpemakai_k lp on t.create_loginpemakai_id = lp.loginpemakai_id
+            join pegawai_m p on lp.pegawai_id = p.pegawai_id
+            left join gelarbelakang_m g on g.gelarbelakang_id = p.gelarbelakang_id
+            left join loginpemakai_k lpu on t.update_loginpemakai_id = lpu.loginpemakai_id
+            left join pegawai_m pu on lpu.pegawai_id = pu.pegawai_id
+            left join gelarbelakang_m gu on gu.gelarbelakang_id = pu.gelarbelakang_id
             WHERE t.pendaftaran_id = $1 
             AND (is_deleted = $2 OR is_deleted IS NULL)
             AND jenis = $3
@@ -500,6 +532,7 @@ $filters = [
     'no_rekam_medik' => isset($_GET['no_rekam_medik']) ? $_GET['no_rekam_medik'] : "",
     'pasienBpjs' => isset($_GET['pasienBpjs']) ? $_GET['pasienBpjs'] : "",
     'sudahKRS' => isset($_GET['sudahKRS']) ? $_GET['sudahKRS'] : "",
+    'no_pendaftaran' => isset($_GET['no_pendaftaran']) ? $_GET['no_pendaftaran'] : "",
     'ruanganSelect' => isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : ""
 ];
 

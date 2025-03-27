@@ -8,7 +8,7 @@ class LoadDataKRSBPJS {
         $this->conn = $conn;
     }
 
-    public function getData($draw, $limit, $offset, $searchValue, $periode, $dateRangePicker, $nama_pasien, $no_rekam_medik, $pasienBpjs, $sudahKRS, $ruanganSelect) {
+    public function getData($draw, $limit, $offset, $searchValue, $periode, $dateRangePicker, $nama_pasien, $no_rekam_medik, $pasienBpjs, $sudahKRS, $ruanganSelect, $no_pendaftaran) {
         if($pasienBpjs==1){          
             $baseQuery = " FROM laporankrsri_v WHERE carabayar_id = 2";
         }else{
@@ -56,6 +56,11 @@ class LoadDataKRSBPJS {
             $params[] = "%".$nama_pasien."%";
             $paramIndex++;
         }
+        if (!empty($no_pendaftaran)) {
+            $baseQuery .= " AND no_pendaftaran ILIKE $" . $paramIndex;
+            $params[] = "%".$no_pendaftaran."%";
+            $paramIndex++;
+        }
         // Pilih kolom tanggal berdasarkan periode yang dipilih
         $column = "tglpulang"; // Default
         if (!empty($periode)) {
@@ -82,8 +87,8 @@ class LoadDataKRSBPJS {
                 $endDate = trim($dates[1]);
 
                 $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-                $params[] = $startDate;
-                $params[] = $endDate;
+                $params[] = $startDate. " 00:00:00";
+                $params[] = $endDate. " 23:59:59";
                 $paramIndex += 2;
             }else{
                 $startDate = trim($dates[0]);
@@ -96,8 +101,8 @@ class LoadDataKRSBPJS {
             date_default_timezone_set('Asia/Jakarta'); // Pastikan timezone sesuai
             $tanggalSekarang = date("Y-m-d"); // Format: 2025-03-12 
             $baseQuery .= " AND $column BETWEEN $" . $paramIndex . " AND $" . ($paramIndex + 1);
-            $params[] = $tanggalSekarang;
-            $params[] = $tanggalSekarang;
+            $params[] = $tanggalSekarang. " 00:00:00";
+            $params[] = $tanggalSekarang. " 23:59:59";
             $paramIndex += 2;
         }
         if($sudahKRS==1){          
@@ -114,7 +119,7 @@ class LoadDataKRSBPJS {
         $totalFiltered = pg_fetch_result(pg_query_params($this->conn, $countFilteredQuery, $params), 0, 0);
 
         // Ambil data sesuai pagination
-        $query = "SELECT *" . $baseQuery . " LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);
+        $query = "SELECT *" . $baseQuery . " ORDER BY pendaftaran_id DESC LIMIT $" . $paramIndex . " OFFSET $" . ($paramIndex + 1);
         $params[] = $limit;
         $params[] = $offset;
 
@@ -138,24 +143,42 @@ class LoadDataKRSBPJS {
                 $diff = $tglpulang->diff($tgl_adviskrs);
                 $menit = ($diff->h * 60)+$diff->i;
                 $totalWaktu = "{$diff->days} hari, {$diff->h} jam, {$diff->i} menit";
-                if($diff->days>0){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
-                }else if($menit>90){
-                    $color='red';
-                    $keterangan='Lebih dari 90 menit';
-
+                if($tglpulang > $tgl_adviskrs){
+                    if($menit>90){
+                        $color='red';
+                        $keterangan='Lebih dari 90 menit';
+    
+                    }else{
+                        $color='green';
+                        $keterangan='Kurang dari 90 menit';
+                    }
                 }else{
-                    $color='green';
-                    $keterangan='Kurang dari 90 menit';
-
+                    $color='red';
+                    $keterangan='Lebih dari 90 menit (Jam Advis KRS lebih besar dari jam pasien pulang)';
                 }
             }
             // Ambil data tambahan berdasarkan `pendaftaran_id`
-            $baseQuery1 = "SELECT r.ruangan_nama, t.* 
+            $baseQuery1 = "SELECT 
+            r.ruangan_nama,
+            CONCAT(
+                COALESCE(p.gelardepan, ''), ' ',
+                p.nama_pegawai, ' ',
+                COALESCE(g.gelarbelakang_nama, '')
+            ) AS nama_create,
+            CONCAT(
+                COALESCE(pu.gelardepan, ''), ' ',
+                pu.nama_pegawai, ' ',
+                COALESCE(gu.gelarbelakang_nama, '')
+            ) AS nama_update,
+            t.* 
             FROM keteranganrespontime_t t  
             JOIN ruangan_m r ON t.ruangan_id = r.ruangan_id 
+            join loginpemakai_k lp on t.create_loginpemakai_id = lp.loginpemakai_id
+            join pegawai_m p on lp.pegawai_id = p.pegawai_id
+            left join gelarbelakang_m g on g.gelarbelakang_id = p.gelarbelakang_id
+            left join loginpemakai_k lpu on t.update_loginpemakai_id = lpu.loginpemakai_id
+            left join pegawai_m pu on lpu.pegawai_id = pu.pegawai_id
+            left join gelarbelakang_m gu on gu.gelarbelakang_id = pu.gelarbelakang_id
             WHERE t.pendaftaran_id = $1 
             AND (is_deleted = $2 OR is_deleted IS NULL)
             AND jenis = $3
@@ -195,10 +218,11 @@ $nama_pasien = isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "";
 $no_rekam_medik = isset($_GET['no_rekam_medik']) ? $_GET['no_rekam_medik'] : "";
 $pasienBpjs = isset($_GET['pasienBpjs']) ? $_GET['pasienBpjs'] : "";
 $sudahKRS = isset($_GET['sudahKRS']) ? $_GET['sudahKRS'] : "";
+$no_pendaftaran = isset($_GET['no_pendaftaran']) ? $_GET['no_pendaftaran'] : "";
 $ruanganSelect = isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : "";
 
 $loadData = new LoadDataKRSBPJS($conn);
-$data = $loadData->getData($draw, $limit, $offset, $searchValue, $periode, $dateRangePicker, $nama_pasien, $no_rekam_medik, $pasienBpjs, $sudahKRS, $ruanganSelect );
+$data = $loadData->getData($draw, $limit, $offset, $searchValue, $periode, $dateRangePicker, $nama_pasien, $no_rekam_medik, $pasienBpjs, $sudahKRS, $ruanganSelect, $no_pendaftaran );
 
 header('Content-Type: application/json');
 echo json_encode($data);

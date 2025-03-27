@@ -113,13 +113,13 @@ $base_url = get_base_url();
             <div class="col-12">
               <!-- Table -->
               <div class="card">
-                <div class="card-header">
+                <!-- <div class="card-header">
                   <h3 class="card-title">Data Laporan Respon Time KRS</h3>
                   <div class="card-tools">
                   </div>
-                </div>
+                </div> -->
                 <div class="card p-3" style="background-color:rgb(255, 255, 255);">
-                  <h3 class="mb-3">Filter Laporan Respon Time KRS</h3>
+                  <h3 class="mb-3">Filter Laporan</h3>
                   <div class="row mb-2">
                       <div class="col-md-3">
                           <label class="form-label">Periode</label>
@@ -143,9 +143,14 @@ $base_url = get_base_url();
                   </div>
                   <div class="row">
 
-                      <div class="col-md-6">
+                      <div class="col-md-3">
                           <label class="form-label">No RM</label>
                           <input type="text" id="no_rekam_medik" class="form-control" placeholder="No RM">
+                      </div>
+                      
+                      <div class="col-md-3">
+                        <label class="form-label">No Pendaftaran</label>
+                        <input type="text" id="no_pendaftaran" class="form-control" placeholder="No Pendaftaran">
                       </div>
 
                       <div class="col-md-6">
@@ -180,7 +185,7 @@ $base_url = get_base_url();
                       <tr>
                         <th>No.</th>
                         <th>Ruangan</th>
-                        <th>No. Rekam Medik / Nama</th>
+                        <th>No. Rekam Medik  / <br> Nama Pasien  / <br> No Pendaftaran </th>
                         <th>Advis KRS</th>
                         <th>SK Ke Farmasi</th>
                         <th>SK Ke Farmasi Selesai</th>
@@ -269,6 +274,7 @@ $base_url = get_base_url();
             ruanganSelect: $("#ruanganSelect").val() || "",
             pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
             sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
+            no_pendaftaran: $("#no_pendaftaran").val() || "",        
             dateRangePicker: $("#dateRangePicker").val() || ""
         };
         if ($.fn.DataTable.isDataTable("#example1")) {
@@ -304,6 +310,7 @@ $base_url = get_base_url();
                           ruanganSelect: $("#ruanganSelect").val() || "",
                           pasienBpjs: $("#pasienBpjs").prop("checked") ? "1" : "0",
                           sudahKRS: $("#sudahKRS").prop("checked") ? "1" : "0",
+                          no_pendaftaran: $("#no_pendaftaran").val() || "",        
                           dateRangePicker: $("#dateRangePicker").val() || ""
                       };
                       filters=filters_temp;
@@ -328,14 +335,7 @@ $base_url = get_base_url();
                     }
                 },
                 { data: 'ruangan_nama' },
-                {
-                  data: null, render: function (data, type, row) {
-                    const no_rekam_medik = row.no_rekam_medik;
-                    const nama_pasien = (row.nama_pasien === '') ? '-' : row.nama_pasien;
-                    return `${no_rekam_medik} / ${nama_pasien}`;
-                    // return renderButtons(row.id, sessionData);
-                  }
-                },
+                { data: null, render: data => `${data.no_rekam_medik} / <br> ${data.nama_pasien} / <br> ${data.no_pendaftaran}` || '-' },
                 {
                     data: null,
                     render: function (data,type,row) {
@@ -415,15 +415,21 @@ $base_url = get_base_url();
                       if (Array.isArray(row.loopKeterangan) && row.loopKeterangan.length > 0) {
                         let result = ''; // Variabel untuk menyimpan hasil looping
                         row.loopKeterangan.forEach(item => {
+                          let nama_pegawai = '';
+                            if(item.update_loginpemakai_id != null && (item.update_loginpemakai_id != '') ){
+                              nama_pegawai = item.nama_update +' / '+item.update_time ;
+                            }else{
+                              nama_pegawai = item.nama_create +' / '+item.create_time ;
+                            }
                             // result += (item.keterangan || '-') + '<br> ';
                             if(item.ruangan_id == <?php echo $_SESSION['ruangan_id']?>){
-                              result += `<b>${item.ruangan_nama}</b>` +' : '+ item.keterangan;
+                              result += `<b>${item.ruangan_nama} (${nama_pegawai})</b>` +' : <br>'+ item.keterangan;
                               result += ` <a href="#" class="openDialogUpdate" onclick="openDialogUpdate(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk merubah keterangan"><i class="fa fa-pencil-alt text-primary"></i></a>`;
                               result += ` <a href="#" class="openDialogDelete" onclick="openDialogDelete(${item.keteranganrespontime_id})" data-toggle="tooltip" title="Klik untuk menghapus keterangan"><i class="fa fa-trash text-danger"></i></a>`;
                               result +=  ' <br>';
 
                             }else{
-                              result +=`<b>${item.ruangan_nama}</b>`  +' : '+ item.keterangan+ ' <br>';
+                              result +=`<b>${item.ruangan_nama} (${nama_pegawai})</b>`  +' : <br>'+ item.keterangan+ ' <br>';
                             }
                         });
 
