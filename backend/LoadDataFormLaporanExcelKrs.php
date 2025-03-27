@@ -230,7 +230,7 @@ class LoadDataFormLaporanExcelKrs {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         // Header kolom
-        $headers = ["No", "Ruangan", "No Rekam Medik / Nama", "Advis KRS", "SK Ke Farmasi", "SK Ke Farmasi Selesai", "Entry Resep", "Jam Pembayaran", "Jam Pasien Pulang", "Total Waktu", "Keterangan"];
+        $headers = ["No", "Ruangan", "No Rekam Medik / Nama", "Advis MRS", "Terbit SPRI", "Selesai Pendaftaran ", "Jam Timbang Terima", "Total Waktu", "Keterangan"];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Tambahkan data
@@ -238,6 +238,13 @@ class LoadDataFormLaporanExcelKrs {
         $no = 1;
         foreach ($data as $row) {
             $namaPasien = str_replace("<br>", "\n", "{$row['no_rekam_medik']} / {$row['nama_pasien']}");
+        
+            $tanggalAdvis  = (!empty($row['tgl_advismrs'])) ?  str_replace("<br>", "\n", "{$row['tgl_advismrs']} / {$row['pegawai_advismrs']}") : '-';
+            $terbitSPRI = (!empty($row['tgl_suratperintahranap'])) ? str_replace("<br>", "\n", "{$row['tgl_suratperintahranap']}") : '-';
+            $tgladmisi = (!empty($row['tgladmisi'])) ? str_replace("<br>", "\n", "{$row['tgladmisi']}") : '-';
+            $tgl_timbangterima  = (!empty($row['tgl_timbangterima'])) ?  str_replace("<br>", "\n", "{$row['tgl_timbangterima']} / {$row['pegawai_timbangterima']}") : '-';
+
+
             // $ket='';
             // if(sizeof($row['loopKeterangan'])>0){
             //     foreach($row['loopKeterangan'] as $ket_row){
@@ -249,11 +256,11 @@ class LoadDataFormLaporanExcelKrs {
             $sheet->setCellValue("C$rowNum", $namaPasien);
             // $sheet->setCellValue("D$rowNum", "{$row['tgl_adviskrs']} / {$row['pegawai_adviskrs']}");
             // $sheet->setCellValue("E$rowNum", "{$row['tgl_skfarmasi']} / {$row['pegawai_skfarmasi']}");
-            $sheet->setCellValue("D$rowNum", "{$row['tgl_adviskrs']}");
-            $sheet->setCellValue("E$rowNum", "{$row['tgl_skfarmasi']}");
-            $sheet->setCellValue("F$rowNum", $row['tgl_verifikasifarmasi']);
-            $sheet->setCellValue("G$rowNum", $row['tglreseptur']);
-            $sheet->setCellValue("H$rowNum", $row['tglpembayaran']);
+            $sheet->setCellValue("D$rowNum", $tanggalAdvis);
+            $sheet->setCellValue("E$rowNum", $terbitSPRI);
+            $sheet->setCellValue("F$rowNum", $tgladmisi);
+            $sheet->setCellValue("G$rowNum", $tgl_timbangterima);
+            $sheet->setCellValue("H$rowNum", $row['totalWaktu']);
             $sheet->setCellValue("I$rowNum", $row['tglpulang']);
             // $sheet->setCellValue("I$rowNum", $row['totalWaktu']);
             // $sheet->setCellValue("I$rowNum", "{$row['totalWaktu']} / {$row['keteranganTotal']}");
@@ -271,6 +278,7 @@ class LoadDataFormLaporanExcelKrs {
             }
 
             $sheet->getCell("J$rowNum")->setValue($richText);
+            
             // $sheet->getStyle("I$rowNum")->getAlignment()->setWrapText(true); // Agar teks bisa turun ke baris baru
             // $sheet->setCellValue("K$rowNum", $ket);
             // Gunakan RichText untuk format yang lebih baik pada keterangan
