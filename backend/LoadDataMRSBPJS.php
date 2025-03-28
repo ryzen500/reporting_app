@@ -19,12 +19,25 @@ class LoadDataMRSBPJS {
         $allowed_instalasi = [2, 8, 3, 73];
 
         if ($ruanganSelect == "" && !in_array($session_instalasi_id, $allowed_instalasi)) {
+        //   echo "Kick 2";
             // Jika instalasi_id tidak sesuai, paksa filter ruangan_id = 7
             $baseQuery .= " AND ruangan_id = $" . $paramIndex;
             $params[] = 7;
             $paramIndex++;
+        
         } else {
+            // echo "Kick 1";
             // var_dump($ruanganSelect);die;
+
+            if($ruanganSelect == ""){
+                // Jika instalasi_id tidak sesuai, paksa filter ruangan_id = 7
+                $baseQuery .= " AND ruangan_id = $" . $paramIndex;
+                $params[] = $_SESSION['ruangan_id'];
+                $paramIndex++;
+
+
+            }
+
             // Jika instalasi_id sesuai, filter berdasarkan ruangan dari session
             if (!empty($ruanganSelect) && sizeof($ruanganSelect) == 1 && $ruanganSelect[0] !== "") {
                 $baseQuery .= " AND ruangan_id = $" . $paramIndex;
@@ -32,6 +45,9 @@ class LoadDataMRSBPJS {
                 $paramIndex++;
             }
         }
+        // echo "Kick 3";
+        // die;
+
         // var_dump($params);die;
 
         // Tambahkan filter pencarian umum
