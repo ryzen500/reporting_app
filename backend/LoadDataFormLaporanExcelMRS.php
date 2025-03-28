@@ -25,6 +25,8 @@ class LoadDataFormLaporanExcelMRS {
     private $ruanganSelect;
     private $no_pendaftaran;
 
+    private $sudahMRS;
+
     public function __construct($conn, $limit = 10, $offset = 0, $filters = []) {
         $this->conn = $conn;
         $this->limit = intval($limit);
@@ -34,7 +36,7 @@ class LoadDataFormLaporanExcelMRS {
         $this->nama_pasien = $filters['nama_pasien'] ?? '';
         $this->no_rekam_medik = $filters['no_rekam_medik'] ?? '';
         $this->pasienBpjs = $filters['pasienBpjs'] ?? '';
-        $this->sudahKRS = $filters['sudahKRS'] ?? '';
+        $this->sudahMRS = $filters['sudahMRS'] ?? '';
         $this->no_pendaftaran = $filters['no_pendaftaran'] ?? '';
         $this->ruanganSelect = (!empty($filters['ruanganSelect'])) ?  explode(",", $filters['ruanganSelect']):'';
     }
@@ -225,7 +227,7 @@ class LoadDataFormLaporanExcelMRS {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         // Header kolom
-        $headers = ["No", "Ruangan", "No Rekam Medik / Nama", "Advis KRS", "SK Ke Farmasi", "SK Ke Farmasi Selesai", "Entry Resep", "Jam Pembayaran", "Jam Pasien Pulang", "Total Waktu", "Keterangan"];
+        $headers = ["No", "Ruangan", "No Rekam Medik / Nama / No. Pendaftaran", "Advis MRS", "Terbit SPRI", "Selesai Pendaftaran ", "Jam Timbang Terima", "Total Waktu", "Keterangan"];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Tambahkan data
@@ -266,13 +268,14 @@ class LoadDataFormLaporanExcelMRS {
             $sheet->setCellValue("E$rowNum", $terbitSPRI);
             $sheet->setCellValue("F$rowNum", $tgladmisi);
             $sheet->setCellValue("G$rowNum", $tgl_timbangterima);
-            $sheet->setCellValue("H$rowNum", $row['totalWaktu']);
+            // $sheet->setCellValue("H$rowNum", $row['totalWaktu']);
             // $sheet->setCellValue("I$rowNum", $row['totalWaktu']);
             // $sheet->setCellValue("I$rowNum", "{$row['totalWaktu']} / {$row['keteranganTotal']}");
 
             // Gunakan RichText untuk kolom I agar keteranganTotal bisa diwarnai
             $richText = new RichText();
-            $richText->createText("{$row['totalWaktu']} / \n"); // Tambahkan newline setelah totalWaktu
+
+                $richText->createText("{$row['totalWaktu']} / \n"); // Tambahkan newline setelah totalWaktu
 
             $textKeterangan = $richText->createTextRun($row['keteranganTotal']);
             
@@ -282,7 +285,7 @@ class LoadDataFormLaporanExcelMRS {
                 $textKeterangan->getFont()->setColor(new Color(Color::COLOR_GREEN));
             }
 
-            $sheet->getCell("J$rowNum")->setValue($richText);
+            $sheet->getCell("H$rowNum")->setValue($richText);
             // $sheet->getStyle("I$rowNum")->getAlignment()->setWrapText(true); // Agar teks bisa turun ke baris baru
             // $sheet->setCellValue("K$rowNum", $ket);
             // Gunakan RichText untuk format yang lebih baik pada keterangan
@@ -307,16 +310,16 @@ class LoadDataFormLaporanExcelMRS {
                 $textBold = $richTextKet->createTextRun('-');
             }
 
-            // Masukkan richText ke kolom K (Keterangan)
-            $sheet->getCell("K$rowNum")->setValue($richTextKet);
-            $sheet->getStyle("K$rowNum")->getAlignment()->setWrapText(true); // Supaya teks turun ke baris baru
+            // Masukkan richText ke kolom H (Keterangan)
+            $sheet->getCell("I$rowNum")->setValue($richTextKet);
+            $sheet->getStyle("I$rowNum")->getAlignment()->setWrapText(true); // Supaya teks turun ke baris baru
 
 
             $no++;
             $rowNum++;
         }
         // ✅ Atur Lebar Kolom Otomatis
-        foreach (range('A', 'K') as $col) { 
+        foreach (range('A', 'I') as $col) { 
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
         // Simpan file Excel
@@ -353,6 +356,9 @@ class LoadDataFormLaporanExcelMRS {
             $baseQuery .= " AND ruangan_id IN (" . implode(", ", $placeholders) . ")";
         }
 
+        if($this->sudahMRS === "true") { 
+            $baseQuery .= " AND pasienadmisi_id is not null";
+        }
         if (!empty($this->no_rekam_medik)) {
             $baseQuery .= " AND no_rekam_medik ILIKE $" . $paramIndex;
             $params[] = "%".$this->no_rekam_medik."%";
@@ -364,11 +370,11 @@ class LoadDataFormLaporanExcelMRS {
             $params[] = "%".$this->nama_pasien."%";
             $paramIndex++;
         }
-        // if (!empty($this->no_pendaftaran)) {
-        //     $baseQuery .= " AND no_pendaftaran ILIKE $" . $paramIndex;
-        //     $params[] = "%".$this->no_pendaftaran."%";
-        //     $paramIndex++;
-        // }
+        if (!empty($this->no_pendaftaran)) {
+            $baseQuery .= " AND no_pendaftaran ILIKE $" . $paramIndex;
+            $params[] = "%".$this->no_pendaftaran."%";
+            $paramIndex++;
+        }
         
         // Pilih kolom tanggal berdasarkan periode yang dipilih
         $column = "tglpulang"; // Default
@@ -541,7 +547,7 @@ $filters = [
     'nama_pasien' => isset($_GET['nama_pasien']) ? $_GET['nama_pasien'] : "",
     'no_rekam_medik' => isset($_GET['no_rekam_medik']) ? $_GET['no_rekam_medik'] : "",
     'pasienBpjs' => isset($_GET['pasienBpjs']) ? $_GET['pasienBpjs'] : "",
-    'sudahKRS' => isset($_GET['sudahKRS']) ? $_GET['sudahKRS'] : "",
+    'sudahMRS' => isset($_GET['sudahMRS']) ? $_GET['sudahMRS'] : "",
     'no_pendaftaran' => isset($_GET['no_pendaftaran']) ? $_GET['no_pendaftaran'] : "",
     'ruanganSelect' => isset($_GET['ruanganSelect']) ? $_GET['ruanganSelect'] : ""
 ];
