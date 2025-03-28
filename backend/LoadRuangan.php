@@ -10,7 +10,7 @@ class LoadRuangan {
 
     public function getData() {
         // Perbaikan: Gunakan pg_query() karena tidak ada parameter dalam query
-        $query1 = "SELECT * FROM ruangan_m";
+        $query1 = "SELECT * FROM ruangan_m left join instalasi_m on ruangan_m.instalasi_id =instalasi_m.instalasi_id WHERE instalasi_m.instalasi_id in (2,8,3,73) and instalasi_m.instalasi_aktif is true ";
         $result1 = pg_query($this->conn, $query1);
 
         // Periksa apakah query berhasil

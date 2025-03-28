@@ -18,9 +18,9 @@ if ($environment == "production") {
     
 }else{
 
-    $host = "192.168.214.225";
+    $host = "192.168.214.222";
     $port = "5121";
-    $dbname = "db_rswb_running_new";
+    $dbname = "db_rswb_simulasi";
     $user = "developer";
     $password = "s6SpprwyLVqh7kFg";
     
