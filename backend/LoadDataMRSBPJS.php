@@ -26,8 +26,7 @@ class LoadDataMRSBPJS {
             $paramIndex++;
         
         } else {
-            // echo "Kick 1";
-            // var_dump($ruanganSelect);die;
+
 
             if($ruanganSelect == ""){
                 // Jika instalasi_id tidak sesuai, paksa filter ruangan_id = 7
