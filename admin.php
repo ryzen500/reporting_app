@@ -543,6 +543,29 @@ $base_url = get_base_url();
       window.open(base_url + `mpdf?id=${id}`, "_blank");
       // location.href = base_url + `mpdf.php?id=${id}`;
     }
+    function checkSession() {
+      $.ajax({
+        url: 'backend/checkSession.php',  // URL ke file PHP yang memeriksa session
+        type: 'GET',
+        success: function(response) {
+          const data = JSON.parse(response); // Parse respons JSON dari server
+
+          if (data.status === 'success') {
+            // Session aktif, lanjutkan proses
+            // console.log(data.message);
+          }
+        },
+        error: function(xhr, status, error) {
+          if (xhr.status === 401) {
+            // Session tidak aktif, arahkan untuk login
+            console.log('Session tidak aktif, harap login kembali');
+            window.location.href = 'login.php';  // Arahkan pengguna ke halaman login
+          } else {
+            console.error('Terjadi kesalahan:', error);
+          }
+        }
+      });
+    }
 
     function advisKrs(id) {
       Swal.fire({
@@ -556,6 +579,7 @@ $base_url = get_base_url();
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
+          checkSession();
           $.ajax({
             url: 'backend/updateJamAdvis.php',
             type: 'POST',
@@ -566,6 +590,10 @@ $base_url = get_base_url();
               loadData();
             },
             error: function (error) {
+              // if(error.status==401){
+              //   Swal.fire('Error!', 'Your session has expired. You will be redirected to the login page.', 'error');
+              //   window.location.href = 'login.php';  // Arahkan pengguna ke halaman login
+              // }
               console.error('Error Save data:', error);
               Swal.fire('Error!', 'Terjadi kesalahan saat simpan data.', 'error');
             }
@@ -585,6 +613,7 @@ $base_url = get_base_url();
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
+          checkSession();
           $.ajax({
             url: 'backend/updateJamKrs.php',
             type: 'POST',
@@ -596,6 +625,10 @@ $base_url = get_base_url();
             },
             error: function (error) {
               console.error('Error Save data:', error);
+              if(error.status==401){
+                Swal.fire('Error!', 'Your session has expired. You will be redirected to the login page.', 'error');
+                window.location.href = 'login.php';  // Arahkan pengguna ke halaman login
+              }
               Swal.fire('Error!', 'Terjadi kesalahan saat simpan data.', 'error');
             }
           });
@@ -614,6 +647,7 @@ $base_url = get_base_url();
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
+          checkSession();
           $.ajax({
             url: 'backend/deleteKeterangan.php',
             type: 'POST',
@@ -632,6 +666,8 @@ $base_url = get_base_url();
       });
     }
     function openDialogUpdate(keteranganrespontime_id){
+      checkSession();
+
           // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
           $.ajax({
             url: 'backend/GetEditDetailKeterangan.php',
@@ -647,6 +683,8 @@ $base_url = get_base_url();
         });
     }
     function openDialogAdd(pasienadmisi_id,pendaftaran_id){
+      checkSession();
+
           // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
           $.ajax({
             url: 'backend/GetDetailKeterangan.php',

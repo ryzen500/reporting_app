@@ -622,7 +622,29 @@ $base_url = get_base_url();
     initDataTable();
 }
 
+    function checkSession() {
+      $.ajax({
+        url: 'backend/checkSession.php',  // URL ke file PHP yang memeriksa session
+        type: 'GET',
+        success: function(response) {
+          const data = JSON.parse(response); // Parse respons JSON dari server
 
+          if (data.status === 'success') {
+            // Session aktif, lanjutkan proses
+            // console.log(data.message);
+          }
+        },
+        error: function(xhr, status, error) {
+          if (xhr.status === 401) {
+            // Session tidak aktif, arahkan untuk login
+            console.log('Session tidak aktif, harap login kembali');
+            window.location.href = 'login.php';  // Arahkan pengguna ke halaman login
+          } else {
+            console.error('Terjadi kesalahan:', error);
+          }
+        }
+      });
+    }
 
 
     function handleClick(pendaftaran_id, tgl_timbangterima) {
@@ -636,6 +658,7 @@ $base_url = get_base_url();
       confirmButtonText: "Ya , Saya Yakin"
     }).then((result) => {
       if (result.isConfirmed) {
+        checkSession();
         let today = new Date();
 
       // Mendapatkan bagian tahun, bulan, hari, jam, menit, dan detik
@@ -682,6 +705,7 @@ $base_url = get_base_url();
       confirmButtonText: "Ya , Saya Yakin"
     }).then((result) => {
       if (result.isConfirmed) {
+        checkSession();
         let today = new Date();
 
       // Mendapatkan bagian tahun, bulan, hari, jam, menit, dan detik
@@ -789,7 +813,7 @@ $base_url = get_base_url();
     }
     $(document).on('click', '.openDialogAdd', function (e) {
         e.preventDefault();
-
+        checkSession();
         const pendaftaran_id = $(this).data('id'); // Ambil ID dari elemen yang diklik
 
         // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
@@ -811,7 +835,7 @@ $base_url = get_base_url();
         e.preventDefault();
 
         const keteranganrespontime_id = $(this).data('id'); // Ambil ID dari elemen yang diklik
-
+        checkSession();
         // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
         $.ajax({
             url: 'backend/UpdateDetailKeteranganMRS.php',
@@ -852,7 +876,7 @@ $base_url = get_base_url();
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-     
+          checkSession();
              // Buat AJAX request untuk mengambil data tambahan (jika diperlukan)
         $.ajax({
             url: 'backend/deleteKeteranganMRS.php',
