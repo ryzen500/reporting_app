@@ -295,7 +295,7 @@ $base_url = get_base_url();
             serverSide: true,
             processing: true,
             responsive: true,
-            lengthChange: false,
+            lengthChange: true,
             paging: true, // Aktifkan paging
             autoWidth: false,
             ajax: {
@@ -451,6 +451,7 @@ $base_url = get_base_url();
                 
             ],
             pageLength: 10,
+          
             buttons: [
                 { extend: 'colvis', columns: ':not(.noVis)' },
                 {

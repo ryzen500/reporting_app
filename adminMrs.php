@@ -321,7 +321,7 @@ $base_url = get_base_url();
         serverSide: true,
         processing: true,
         responsive: true,
-        lengthChange: false,
+        lengthChange: true,
         paging: true,
         autoWidth: false,
         ajax: {
