@@ -277,7 +277,7 @@ if (!isset($conn)) {
 
 // Ambil parameter dari frontend
 $draw = isset($_GET['draw']) ? intval($_GET['draw']) : 1;
-$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+$limit = !empty($_GET['limit']) ? intval($_GET['limit']) : 10;
 $offset = isset($_GET['offset']) ? intval($_GET['offset']) : 0;
 $searchValue = isset($_GET['searchValue']) ? $_GET['searchValue'] : "";
 $no_rekam_medik = isset($_GET['no_rekam_medik']) ? $_GET['no_rekam_medik'] : "";
